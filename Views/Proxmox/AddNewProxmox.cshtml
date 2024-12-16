@@ -1,0 +1,184 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Create new Proxmox connection";
+}
+@model ProxmoxModel
+
+<div>
+    <h2>Add new Proxmox connection</h2>
+    
+    <div class="container">        
+        <form id="proxmoxCredForm">
+            <div>
+                <label for="urlProxmox">URL:</label>
+                <input type="url" id="urlProxmox" name="urlProxmox" asp-for="ProxmoxURL" placeholder="https://F.Q.D.N:port" required />
+            </div>
+            <div>
+                <label for="urlProxmox">Username:</label>
+                <input type="text" id="usernameProxmox" name="usernameProxmox" required />
+            </div>
+            <div>
+                <label for="tokenProxmox">TokenID (API Key Auth):</label>
+                <input type="text" id="tokenIDProxmox" name="tokenIDProxmox" required />
+            </div>
+            <div>
+                <label for="tockenSecretProxmox">Token Secret:</label>
+                <input type="text" id="tokenSecretProxmox" name="tokenSecretProxmox" required />
+            </div>
+            <form id="vlanTagsForm">
+                <label>Add new VLAN tag:</label><br>
+                <div id="vlanTags">
+                    <!--input type="text" name="stringList" placeholder="New VLAN Tag"-->
+                </div>
+                <button type="button" onclick="addInputField()">Add New VLAN TAG</button>
+            </form>            
+            <div>
+                <button type="button" style="margin-top:10px" id="checkProxmoxButton" onclick="checkProxmoxConn()">Check URL</button>
+            </div>
+            <div>
+                <button type="button" id="addNewProxmox" style="margin-top:10px" onclick="createNewProxmoxCred()" disabled>Add New Proxmox</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+</div>
+
+<script>    
+    
+    let addNewProxmox = document.getElementById('addNewProxmox');
+    let checkProxmoxButton = document.getElementById('checkProxmoxButton');
+
+    let proxmox_URL = '';
+    let proxmox_Token = '';
+    let isProxmoxChecked = false;
+
+    // Makes addButton clickable
+    function enableAddNewProxmoxButton() {
+        const addNewProxmox = $('#addNewProxmox');
+
+        if (isProxmoxChecked) {
+            addNewProxmox.prop('disabled', false);
+        }
+    }
+   
+    // Process addButton request
+    function createNewProxmoxCred() { 
+        const url = '/Proxmox/CreateNewProxmoxCred';
+        const data = {
+            proxmoxurl: proxmox_URL,
+            proxmoxtoken: proxmox_Token,
+            ProxmoxNetTags: getAllInputValues(),
+        }
+
+        postToController(url, data)
+        .then(result => {           
+            showNotification(result.status, result.message);
+        })
+        .catch(error => {
+            //If Error — JSON, get required fields
+            let errorMessage = 'Error occerred'; // Default value
+
+            showNotification(500, error);
+            
+            if (typeof error === 'object') {
+                // If it`s an object, but not a responce
+                errorMessage = error.message || JSON.stringify(error);
+                showNotification(520,errorMessage);
+            } else {
+                // If it`s a sting or another type
+                showNotification(520,error.toString());
+            }
+
+            console.error('Error:', error);
+        });
+    }
+    
+    // Proxmox availability check
+    function checkProxmoxConn() {
+        const urlValue = $('#urlProxmox').val();
+        const usernameValue = $('#usernameProxmox').val();
+        const tokenIDValue = $('#tokenIDProxmox').val();
+        const tokenSecValue = $('#tokenSecretProxmox').val();
+        const button = $('#checkProxmoxButton');
+
+        isProxmoxChecked = false;
+
+        button.html('<p style="color: blue; text-align: center">Checking...</p>');
+
+        $.ajax({
+            url: '/Connection/CheckProxmoxUrl',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ url: urlValue, username: usernameValue, tokenid: tokenIDValue, tokensecret: tokenSecValue }),
+            success: function (data) {
+                if (data.isValid) {
+                    button.html('<p style="color: green; text-align: center">OK</p>');
+                    isProxmoxChecked = true;
+                    proxmox_URL = urlValue;
+                    proxmox_Token = 'PVEAPIToken=' + usernameValue + '!' + tokenIDValue + '=' + tokenSecValue;
+                    enableAddNewProxmoxButton();
+                    //saveToCookies('proxmoxUrl', urlValue);
+                    //saveToCookies('proxmoxToken', 'PVEAPIToken=' + usernameValue + '!' + tokenIDValue + '=' + tokenSecValue)
+                    //saveToCookies('proxmoxUsername', usernameValue);
+                    //saveToCookies('proxmoxTokenID', tokenIDValue);
+                    //saveToCookies('proxmoxTokenSecret', tokenSecValue);
+                    
+                } else {
+                    button.html('<p style="color: red; text-align: center">URL is not accessible</p>');
+                    isProxmoxChecked = false;
+                }
+            },
+            error: function () {
+                button.html('<p style="color: red; text-align: center">Error during request</p>');
+                isProxmoxChecked = false;
+            }
+        });
+    }
+    
+    //Add new HTML for new input field
+    function addInputField() {
+        const container = document.getElementById('vlanTags');
+
+        // Создаем контейнер для группы ввода
+        const inputGroup = document.createElement('div');
+        inputGroup.classList.add('input-group');
+
+        // Создаем поле ввода
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'stringList';
+        input.placeholder = 'New Vlan Tag';
+
+        // Создаем кнопку удаления
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.textContent = 'Delete';
+        removeButton.onclick = () => container.removeChild(inputGroup);
+
+        // Добавляем элементы в группу
+        inputGroup.appendChild(input);
+        inputGroup.appendChild(removeButton);
+
+        // Добавляем группу в контейнер
+        container.appendChild(inputGroup);
+    }
+    
+    // Get all values fron input fields
+    function getAllInputValues() {
+        // Получаем контейнер
+        const container = document.getElementById('vlanTags');
+
+        // Находим все текстовые поля внутри контейнера
+        const inputs = container.querySelectorAll('input[name="stringList"]');
+
+        // Преобразуем NodeList в массив и извлекаем значения
+        const values = Array.from(inputs).map(input => input.value.trim());
+
+        return values;
+    }
+
+</script>

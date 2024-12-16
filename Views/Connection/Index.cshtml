@@ -1,0 +1,187 @@
+﻿@{
+    ViewData["Title"] = "Check Connection";
+}
+@model ConnectionModel.CombinedModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Checker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Check Rancher URL Availability</h1>
+        <form id="urlForm">
+            <div>
+                <label for="urlRancher">URL:</label>
+                <input type="url" id="urlRancher" name="urlRancher" asp-for="RancherCheckModel.Url" placeholder="https://F.Q.D.N" required />
+            </div>
+            <div>
+                <label for="tokenRancher">Token(Bearer Auth):</label>
+                <input type="text" id="tokenRancher" name="tokenRancher" asp-for="RancherCheckModel.Token" required />
+            </div>
+            <div>
+                <button type="button" id="checkRancherButton" disabled>Check URL</button>
+            </div>
+        </form>
+
+        <div id="resultRancher" style="margin-top: 20px;"></div>
+    </div>
+    <div class="container">
+        <h1>Check PROXMOX URL Availability</h1>
+        <form id="urlForm">
+            <div>
+                <label for="urlProxmox">URL:</label>
+                <input type="url" id="urlProxmox" name="urlProxmox" asp-for="ProxmoxCheckModel.Url" placeholder="https://F.Q.D.N" required />
+            </div>
+            <div>
+                <label for="urlProxmox">Username:</label>
+                <input type="text" id="UsernameProxmox" name="UsernameProxmox" asp-for="ProxmoxCheckModel.UserName" required />
+            </div>
+            <div>
+                <label for="tokenProxmox">TokenID (API Key Auth):</label>
+                <input type="text" id="tokenIDProxmox" name="tokenIDProxmox" p asp-for="ProxmoxCheckModel.TokenID" required />
+            </div>
+            <div>
+                <label for="tockenSecretProxmox">Token Secret:</label>
+                <input type="text" id="tokenSecretProxmox" name="tokenSecretProxmox" asp-for="ProxmoxCheckModel.TokenSecret" required />
+            </div>
+            <div>
+                <button type="button" id="checkProxmoxButton" disabled>Check URL</button>
+            </div>
+        </form>
+
+        <div id="resultProxmox" style="margin-top: 20px;"></div>
+    </div>
+
+    <!--need to set diseabled when checking connection is nessesary-->
+    <form>
+        <button type="submit" id="goToPrivision" style="margin:auto" asp-controller="Provision" asp-action="Index">Go To Privision</button>
+    </form>
+    <script>
+        $(document).ready(function () {
+            // Rancher variables
+            const checkRancherButton = $('#checkRancherButton');
+            const urlRancherInput = $('#urlRancher');
+            const tokenRancherInput = $('#tokenRancher');
+            const resultRancherDiv = $('#resultRancher');
+
+            // Proxmox variables
+            const checkProxmoxButton = $('#checkProxmoxButton');
+            const urlProxmoxInput = $('#urlProxmox');
+            const tokenIDProxmoxInput = $('#tokenIDProxmox');
+            const tokenSecretProxmoxInput = $('#tokenSecretProxmox');
+            const resultProxmoxDiv = $('#resultProxmox');
+            const usernameProxmoxInput = $('#UsernameProxmox');
+
+            // Go To Privision button
+            const goToPrivisionButton = $('#goToPrivision');
+
+            // Track completion status
+            let isRancherChecked = false;
+            let isProxmoxChecked = false;
+
+            // Enable goToPrivision button if both checks are complete
+            function enableGoToPrivisionButton() {
+                if (isRancherChecked && isProxmoxChecked) {
+                    goToPrivisionButton.prop('disabled', false);
+                }
+            }
+
+            // Save data to cookies
+            function saveToCookies(key, value) {
+                document.cookie = `${key}=${value}; path=/;`;
+            }
+
+            // Activate Rancher check button when inputs are filled
+            $('#urlRancher, #tokenRancher').on('input', function () {
+                if (urlRancherInput.val() && tokenRancherInput.val()) {
+                    checkRancherButton.prop('disabled', false);
+                } else {
+                    checkRancherButton.prop('disabled', true);
+                }
+            });
+
+            // Rancher check
+            checkRancherButton.on('click', function () {
+                const urlValue = urlRancherInput.val();
+                const tokenValue = tokenRancherInput.val();
+
+                resultRancherDiv.html('<p style="color: blue;">Checking...</p>');
+
+                $.ajax({
+                    url: '/Rancher/CheckRancherUrl',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ url: urlValue, token: tokenValue }),
+                    success: function (data) {
+                        if (data.isValid) {
+                            resultRancherDiv.html('<p style="color: green;">OK</p>');
+                            isRancherChecked = true;
+                            saveToCookies('rancherUrl', urlValue);
+                            saveToCookies('rancherToken', tokenValue);
+                            enableGoToPrivisionButton();
+                        } else {
+                            resultRancherDiv.html('<p style="color: red;">URL is not accessible</p>');
+                            isRancherChecked = false;
+                        }
+                    },
+                    error: function () {
+                        resultRancherDiv.html('<p style="color: red;">Error during request</p>');
+                        isRancherChecked = false;
+                    }
+                });
+            });
+
+            // Activate Proxmox check button when inputs are filled
+            $('#urlProxmox, #tokenIDProxmox, #tokenSecretProxmox, #UsernameProxmox').on('input', function () {
+                if (urlProxmoxInput.val() && tokenIDProxmoxInput.val() && tokenSecretProxmoxInput.val() && usernameProxmoxInput.val()) {
+                    checkProxmoxButton.prop('disabled', false);
+                } else {
+                    checkProxmoxButton.prop('disabled', true);
+                }
+            });
+
+            // Proxmox check
+            checkProxmoxButton.on('click', function () {
+                const urlValue = urlProxmoxInput.val();
+                const usernameValue = usernameProxmoxInput.val();
+                const tokenIDValue = tokenIDProxmoxInput.val();
+                const tokenSecValue = tokenSecretProxmoxInput.val();
+
+                resultProxmoxDiv.html('<p style="color: blue;">Checking...</p>');
+
+                $.ajax({
+                    url: '/Connection/CheckProxmoxUrl',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ url: urlValue, username: usernameValue, tokenid: tokenIDValue, tokensecret: tokenSecValue }),
+                    success: function (data) {
+                        if (data.isValid) {
+                            resultProxmoxDiv.html('<p style="color: green;">OK</p>');
+                            isProxmoxChecked = true;
+                            saveToCookies('proxmoxUrl', urlValue);
+                            saveToCookies('proxmoxToken', 'PVEAPIToken='+usernameValue+'!'+tokenIDValue+'='+tokenSecValue)
+                            //saveToCookies('proxmoxUsername', usernameValue);
+                            //saveToCookies('proxmoxTokenID', tokenIDValue);
+                            //saveToCookies('proxmoxTokenSecret', tokenSecValue);
+                            enableGoToPrivisionButton();
+                        } else {
+                            resultProxmoxDiv.html('<p style="color: red;">URL is not accessible</p>');
+                            isProxmoxChecked = false;
+                        }
+                    },
+                    error: function () {
+                        resultProxmoxDiv.html('<p style="color: red;">Error during request</p>');
+                        isProxmoxChecked = false;
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

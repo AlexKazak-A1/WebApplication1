@@ -1,0 +1,101 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+.container {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    margin: 20px;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+input[type="number"] {
+    width: 80px;
+    padding: 5px;
+    text-align: center;
+}
+
+.input-group {
+    margin-bottom: 10px;
+}
+
+    .input-group input {
+        margin-right: 5px;
+    }
+
+
+
+.notification {
+    position: fixed;
+    bottom: 110px;
+    right: 20px;
+    padding: 15px 20px;
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1000;
+    transition: opacity 0.5s, visibility 0.5s;
+}
+
+    .notification.info {
+        opacity: 1;
+        visibility: visible;
+        background-color: blue;
+        color: white;
+    }
+
+    .notification.success {
+        opacity: 1;
+        visibility: visible;
+        background-color: green;
+    }
+
+    .notification.error {
+        opacity: 1;
+        visibility: visible;
+        background-color: red;
+    }
+
+    .notification.warning {
+        opacity: 1;
+        visibility: visible;
+        background-color: yellow;
+        color: black;
+    }
+
+    .notification.show {
+        opacity: 1;
+        visibility: visible;
+    }

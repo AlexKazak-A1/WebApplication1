@@ -1,0 +1,272 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Create new Cluster";    
+}
+
+@model ProvisionModel
+
+<div>
+    <h2>Create new Rancher Cluster</h2>
+    <br />
+    <div>
+        <label id="text" style="margin:auto">Select Rancher and Proxmox to start deployment</label>
+    </div>
+    <form>
+        <div class="container">
+            <div class="column">
+                <label for="rancherTemplates">Select Rancher:</label>
+                <select name="rancherTemplates" id="select-rancher-template">
+                    <option value="">Data loading...</option>
+                </select>
+            </div>
+            <div class="column">
+                <label for="proxmoxTemplates">Select Proxmox:</label>
+                <select name="proxmoxTemplates" id="select-proxmox-template">
+                    <option value="">Data loading...</option>
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <div>
+        <label id="text" style="margin:auto">Select the required number of components to create a cluster</label>
+    </div>
+    <form>
+        <div class="container">
+            <div class="column">
+                <label for="etcdAndCPNumber">etcd and Control Plane</label>
+                <input type="number" id="etcdAndCPNumber" name="etcdAndCPNumber" placeholder="0" asp-for="NumberOfETCDAndControlPlane">
+            </div>
+            <div class="column">
+                <label for="workerNumber">Worker</label>
+                <input type="number" id="workerNumber" name="workerNumber" min="1" max="50" placeholder="0" asp-for="numberOfWorker">
+            </div>
+            <div>
+                <div class="column">
+                    <label for="vmStartIndex">VM`s Start index</label>
+                    <input type="number" id="vmStartIndex" name="vmStartIndex" placeholder="100" min="100" max="999999999"/>
+                </div>
+            </div>
+            <div>
+                <div class="column">
+                    <label for="vmPrefixInput">VM`s Start index</label>
+                    <input type="text" id="vmPrefixInput" name="vmPrefixInput" placeholder="rke2-" />
+                </div>
+            </div>
+        </div>
+    </form>
+    <form>
+        <label for="select-vm-template">Select a tamplate for provision VM</label>
+        <select name="templates" id="select-vm-template">
+            <option value="">Will appear after Proxmox select</option>
+        </select>
+        <div class="container" id="templateParams">
+            
+        </div>
+    </form>
+    <br/>
+    <div>
+        <label for="clusterName">Claster Name:</label>
+        <input type="text" id="clusterName" required />
+        <br/>
+        <button type="button" id="createRancherClusterButtonTest" onclick="createCluster()" disabled>Create Cluster Test</button>
+    </div>
+
+    <div id="notification" class="notification"></div>
+</div>
+
+<script>
+    const workerInput = document.getElementById('workerNumber');
+    workerInput.addEventListener('input', function () {
+        if (this.value < 1) {
+            this.value = '';
+            showNotification(105,'Value must be in [1..50]');
+        }
+        else if (this.value > 50) {
+            this.value = 50;
+            showNotification(105,'Value must be in [1..50]');
+        }
+    });
+
+    const etcdAndCPInput = document.getElementById('etcdAndCPNumber');
+    etcdAndCPInput.addEventListener('input', function () {
+        let number = parseInt(this.value, 10);
+        if ( number === 1 || number === 3 || this.value == '' ) {
+            
+        }        
+        else {
+            this.value = '';
+            showNotification(105,'Only 1 or 3 Amount enabeled');
+        }
+    });
+
+    let timer;
+
+    const vmStartIndex = document.getElementById('vmStartIndex');
+    vmStartIndex.addEventListener('input', function (event) {
+        clearTimeout(timer); // Clear the previous timer
+        timer = setTimeout(() => {
+            // Logic to execute when the user finishes typing
+            const numberInput = event.target.value;
+            console.log("User finished input:", numberInput);
+            // Perform your validation or processing here
+            let number = parseInt(numberInput, 10);
+            if ( number < 100 || number > 999999999 ) {
+                this.value = '';
+                showNotification(105,'Available range is [100..999999999]');
+            }
+
+        }, 1000); // Adjust the delay (in milliseconds) as needed        
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const rancherSelect = document.getElementById('select-rancher-template');
+        const proxmoxSelect = document.getElementById('select-proxmox-template');
+        const templateSelect = document.getElementById('select-vm-template');
+        const clusterNameInput = document.getElementById('clusterName');
+        const workerInput = document.getElementById('workerNumber');
+        const etcdAndCPInput = document.getElementById('etcdAndCPNumber');        
+
+        const clusterCreateButton = document.getElementById('createRancherClusterButtonTest');
+
+        async function checkSelections() {
+            const rancherValue = rancherSelect.value;
+            const proxmoxValue = proxmoxSelect.value;
+            
+            if (proxmoxValue === '') {
+                templateSelect.innerHTML = ''; // Clear existing options
+
+                const defaultOption = document.createElement('option');
+
+                defaultOption.place
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select Proxmox First';
+                templateSelect.appendChild(defaultOption);
+            }
+
+            if (rancherValue) {
+                console.log('Rancher selections are made:', {
+                    rancher: rancherValue
+                });
+            }
+
+            if (proxmoxValue) {
+                // Both select elements have a selected value
+                console.log('Proxmox selections are made:', {                  
+                    proxmox: proxmoxValue                   
+                });
+
+                // Call your function here
+                getTemplates('/Proxmox/GetTemplate', 'select-vm-template', proxmoxValue);
+            }
+        }
+
+        async function updateButtonState() {
+            const allSelected = 
+                rancherSelect.value &&
+                proxmoxSelect.value &&
+                templateSelect.value &&
+                clusterNameInput.value.trim() &&
+                workerInput.value.trim() && 
+                etcdAndCPInput.value.trim() &&
+                vmStartIndex.value.trim();
+                
+            clusterCreateButton.disabled = !allSelected;
+        }
+
+        async function showTemplateParams() {
+            const templateParams = document.getElementById('templateParams');
+
+            if (templateSelect.value === '') {
+                templateParams.innerHTML = '';
+            }
+            else {                
+                templateParams.innerHTML = `
+                <div>
+                <label>If need change worker properties</label>
+                </div>
+                    <div class="column">
+                        <label for="workerCPU">CPU: </label>
+                        <input type="number" id="workerCPU" name="workerCPU" step="1"/>                        
+                    </div>
+                    <div class="column">
+                        <label for="workerRAM">RAM:</label>
+                        <input type="number" id="workerRAM" name="workerRAM" step="0.5"/>
+                        <label for="workerRAM"> GB</label>
+                    </div>
+                    <div class="column">
+                        <label for="workerHDD">HDD:</label>
+                        <input type="number" id="workerHDD" name="workerHDD" step="5"/>
+                        <label for="workerHDD"> GB</label>
+                    </div>
+                `;
+
+                await getTemplateParams();
+            }
+        }
+
+        async function getTemplateParams() {
+            const workerCPU = document.getElementById('workerCPU');
+            const workerRAM = document.getElementById('workerRAM');
+            const workerHDD = document.getElementById('workerHDD');
+
+            let templateID = templateSelect.value;
+
+            const url = '/Proxmox/GetTemplateParams';
+            const data = templateID;
+
+            const result = await postToController(url, data);
+
+            if (result.value)
+            {
+                workerCPU.value = result.value.cpu;
+                workerRAM.value = parseFloat(result.value.ram).toFixed(2);
+                workerHDD.value = result.value.hdd;
+            }
+        }
+
+        // Add event listeners to All select elements
+        [rancherSelect, proxmoxSelect].forEach(element => {
+            if (element) { 
+                // Ensure the element is not null
+                element.addEventListener('change', updateButtonState);
+                element.addEventListener('change', checkSelections);
+            } else {
+                console.error('An element is missing from the DOM:', element);
+            }
+        });
+
+        [clusterNameInput, workerInput, etcdAndCPInput, vmStartIndex].forEach(element => {
+            if (element) {
+                // Ensure the element is not null
+                element.addEventListener('input', updateButtonState);
+                element.addEventListener('change', updateButtonState);
+            } else {
+                console.error('An element is missing from the DOM:', element);
+            }
+        });
+
+        templateSelect.addEventListener('input', updateButtonState);
+        templateSelect.addEventListener('change', updateButtonState);
+        templateSelect.addEventListener('change', showTemplateParams);
+                
+        //clusterNameInput.addEventListener('input', updateButtonState);
+        // rancherSelect.addEventListener('change', checkSelections);
+        // proxmoxSelect.addEventListener('change', checkSelections);
+
+    });
+
+    window.onload = async () => {
+
+        const ConnectionType = {
+            Rancher: 0,
+            Proxmox: 1
+        };
+        // getTemplates('/Proxmox/GetTemplate', 'select-template','');
+        await getTemplates('/Provision/GetConnectionCreds', 'select-rancher-template', ConnectionType.Rancher);
+        await getTemplates('/Provision/GetConnectionCreds', 'select-proxmox-template', ConnectionType.Proxmox);
+
+    };
+</script>

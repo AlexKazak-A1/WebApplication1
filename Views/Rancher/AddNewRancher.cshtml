@@ -1,0 +1,123 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Create new Rancher connection";
+}
+@model RancherModel
+
+<div>
+    <h2>Add new Rancher connection</h2>
+
+    <div class="container">
+        <form id="rancherCredForm">
+            <div>
+                <label for="urlRancher">URL:</label>
+                <input type="url" id="urlRancher" name="urlRancher" asp-for="RancherURL" placeholder="https://F.Q.D.N" required />
+            </div>
+            <div>
+                <label for="tokenRancher">Token:</label>
+                <input type="text" id="tokenRancher" name="tokenRancher" asp-for="RancherToken" required />
+            </div>
+            
+            <div>
+                <button type="button" style="margin-top:10px" id="checkRancherButton" onclick="checkRancherConn()">Check URL</button>
+            </div>
+            <div>
+                <button type="button" style="margin-top:10px" id="addNewRancher" onclick="createNewRancherCred()" disabled>Add New Rancher</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+</div>
+
+<script>
+
+    let addNewRancher = document.getElementById('addNewRancher');
+    let checkRancherButton = document.getElementById('ckeckRancherButton');
+
+    let rancher_URL = '';
+    let rancher_Token = '';
+    let isRancherChecked = false;
+
+    // Rancher availability check
+    function checkRancherConn() {
+        const url = $('#urlRancher').val();
+        const tokenRancher = $('#tokenRancher').val();
+        const button = $('#checkRancherButton');
+
+        isRancherChecked = false;
+
+        button.html('<p style="color: blue; text-align: center">Checking...</p>');
+
+        $.ajax({
+            url: '/Connection/CheckRancherUrl',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ url: url, token: tokenRancher }),
+            success: function (data) {
+                if (data.isValid) {
+                    button.html('<p style="color: green; text-align: center">OK</p>');
+                    isRancherChecked = true;
+                    rancher_URL = url;
+                    rancher_Token = tokenRancher;
+                    enableAddNewRancherButton();
+                    //saveToCookies('proxmoxUrl', urlValue);
+                    //saveToCookies('proxmoxToken', 'PVEAPIToken=' + usernameValue + '!' + tokenIDValue + '=' + tokenSecValue)
+                    //saveToCookies('proxmoxUsername', usernameValue);
+                    //saveToCookies('proxmoxTokenID', tokenIDValue);
+                    //saveToCookies('proxmoxTokenSecret', tokenSecValue);
+
+                } else {
+                    button.html('<p style="color: red; text-align: center">URL is not accessible</p>');
+                    isProxmoxChecked = false;
+                }
+            },
+            error: function () {
+                button.html('<p style="color: red; text-align: center">Error during request</p>');
+                isProxmoxChecked = false;
+            }
+        });
+    }
+
+    // Makes addButton clickable
+    function enableAddNewRancherButton() {
+        const addNewRancher = $('#addNewRancher');
+
+        if(isRancherChecked) {
+            addNewRancher.prop('disabled', false);
+        }
+    }
+
+    // Process addButton request
+    function createNewRancherCred() {
+        const url = '/Rancher/CreateNewRancherCred';
+        const data = {
+            rancherurl: rancher_URL,
+            ranchertoken: rancher_Token,
+        }
+
+        postToController(url,data)
+        .then(result => {
+            showNotification(result.status, result.message);
+        })
+        .catch(error => {
+            let errorMessage = 'Error occurred'; // Default value
+
+            showNotification(500, error);
+
+            if (typeof error === 'object') {
+                // If it`s an object, but not a responce
+                errorMessage = error.message || JSON.stringify(error);
+                showNotification(520,errorMessage);
+            } else {
+                // If it`s a sting or another type
+                showNotification(520,error.toString());
+            }
+
+            console.error('Error:', error);
+        });
+    }
+</script>
