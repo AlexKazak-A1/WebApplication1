@@ -1,6 +1,6 @@
 ﻿namespace WebApplication1.Data;
 
-public interface IProvision
+public interface IDBService
 {
     public Task<bool> CheckDBConnection();
 

@@ -16,7 +16,7 @@ public class ProvisionController : Controller
 {
     private readonly ILogger<ProvisionController> _logger;
     private string _rancherCreatePayload = string.Empty;
-    private IProvision _dbWorker;
+    private IDBService _dbWorker;
 
     public string RancherProvisionPayload
     {
@@ -30,7 +30,7 @@ public class ProvisionController : Controller
         }
     }
 
-    public ProvisionController(ILogger<ProvisionController> logger, IProvision provision)
+    public ProvisionController(ILogger<ProvisionController> logger, IDBService provision)
     {
         _logger = logger;
         _rancherCreatePayload = SetPayload();
@@ -71,7 +71,7 @@ public class ProvisionController : Controller
 
             if (param != null)
             {
-                var payload = SetPayload((param)?.ClasterName);
+                var payload = SetPayload((param)?.ClusterName);
 
                 //Ignore certificate checking
                 var handler = new HttpClientHandler
@@ -94,6 +94,7 @@ public class ProvisionController : Controller
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", selectedRancher.RancherToken);
 
                 var response = await httpClient.SendAsync(request);
+                var text = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
                 {
                     return Ok( Json( new Response { Status = Status.OK, Message = "Cluster created successfully" }));
@@ -101,7 +102,10 @@ public class ProvisionController : Controller
                 else
                 {
                     var resultTest = JsonConvert.DeserializeObject<RancherResponse>( await response.Content.ReadAsStringAsync());
-                    return BadRequest( Json( new Response { Status = (Status)int.Parse(resultTest.Code), Message = resultTest.Message }));
+                    if (resultTest.Code.Equals("AlreadyExists"))
+                    {
+                        return Ok(Json(new Response { Status = Status.ALREADY_EXIST, Message = resultTest.Message }));
+                    }                    
                 }           
             }
 
@@ -120,30 +124,21 @@ public class ProvisionController : Controller
         {
             var param = JsonConvert.DeserializeObject<CreateVMsDTO>(data.ToString());
 
-            Proxmox proxmox = new Proxmox(_logger, _dbWorker)
-            {
-                EtcdAndControlPlaneAmount = param.EtcdAndCPlaneAmount,
-                ProxmoxID = param.ProxmoxId,
-                WorkersAmount = param.WorkerAmount,
-                Rancher = new CreateClusterDTO { ClasterName = param.ClusterName, RancherId = param.RancherId.ToString() },
-                VMTemplateID = param.VMTemplateId,
-                VMStartIndex = param.VMStartIndex,
-                VMPrefix = param.VMPrefix,
-            };
-
-            var creationVMsResult = await proxmox.StartProvisioningVMsAsync();
+            ProxmoxService proxmox = new ProxmoxService(_logger, _dbWorker);
+           
+            var creationVMsResult = await proxmox.StartProvisioningVMsAsync(param);
 
             var responseList = new List<Response>();
 
-            foreach (var str in creationVMsResult as List<string>)
+            foreach (var str in creationVMsResult as List<object>)
             {
-                if (str.Contains("Successfully"))
-                {
-                    responseList.Add(new Response { Status = Status.OK, Message = str });
+                if (str is int vmId)
+                {                    
+                    responseList.Add(new Response { Status = Status.OK, Message = vmId.ToString() });
                 }
                 else
                 {
-                    responseList.Add(new Response { Status = Status.WARNING, Message = str });
+                    responseList.Add(new Response { Status = Status.WARNING, Message = str.ToString() });
                 }
                 
             }
@@ -155,6 +150,47 @@ public class ProvisionController : Controller
         catch (Exception ex)
         {
             return BadRequest( Json( new Response { Status = Status.ERROR, Message = ex.Message }));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GetConnectionStringToRancher([FromBody] CreateClusterDTO clusterInfo)
+    {
+        if (clusterInfo == null)
+        {
+            return BadRequest(Json(new Response { Status = Status.ERROR, Message = "Cluster Name not provided!" }));
+        }
+
+        try
+        {
+            var rancherService = new RancherService(_dbWorker);
+            var connectionString = await rancherService.GetConnectionString(clusterInfo.RancherId, clusterInfo.ClusterName);
+            return Ok( Json( new Response { Status = Status.OK, Message = connectionString} ) );
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(Json(new Response { Status = Status.ERROR, Message = ex.Message }));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> StartVMAndConnectToRancher([FromForm] ConnectVmToRancherDTO data)
+    {
+        if (data == null)
+        {
+            return BadRequest(Json(new Response { Status = Status.ERROR, Message = "Input data can't be null" }));
+        }
+
+        try
+        {
+            var proxmoxService = new ProxmoxService(_logger, _dbWorker);
+            //var t = await proxmoxService;
+
+            return Ok(Json(new Response { Status = Status.OK, Message = "test Ok" }));
+        }
+        catch (Exception ex) 
+        {
+            return BadRequest(Json(new Response { Status = Status.ERROR, Message = ex.Message }));
         }
     }
 

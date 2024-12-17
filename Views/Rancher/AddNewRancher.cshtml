@@ -101,7 +101,7 @@
 
         postToController(url,data)
         .then(result => {
-            showNotification(result.status, result.message);
+            showNotification(result.value.status, result.value.message);
         })
         .catch(error => {
             let errorMessage = 'Error occurred'; // Default value

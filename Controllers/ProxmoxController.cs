@@ -18,9 +18,9 @@ namespace WebApplication1.Controllers;
 public class ProxmoxController : Controller
 {
     private readonly ILogger<ProxmoxController> _logger;
-    private readonly IProvision _dbWorker;
+    private readonly IDBService _dbWorker;
 
-    public ProxmoxController(ILogger<ProxmoxController> logger, IProvision worker)
+    public ProxmoxController(ILogger<ProxmoxController> logger, IDBService worker)
     {
         _logger = logger;
         _dbWorker = worker;
@@ -47,12 +47,12 @@ public class ProxmoxController : Controller
 
             var nodesList = new List<string>();
 
-            var t = (await new Proxmox(_logger, _dbWorker).GetProxmoxNodesListAsync(proxmoxId) as List<ProxmoxNodeInfoDTO>);
+            var t = (await new ProxmoxService(_logger, _dbWorker).GetProxmoxNodesListAsync(proxmoxId) as List<ProxmoxNodeInfoDTO>);
             nodesList.AddRange(t.Select(x => x.Node));
             //var proxmoxConn = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
             if (nodesList.Count > 0)
             {
-                var templates = await new Proxmox(_logger, _dbWorker).GetAllNodesTemplatesIds(nodesList, proxmoxId);
+                var templates = await new ProxmoxService(_logger, _dbWorker).GetAllNodesTemplatesIds(nodesList, proxmoxId);
 
                 foreach (var template in templates as Dictionary<int,string>)
                 {
@@ -83,6 +83,7 @@ public class ProxmoxController : Controller
             return BadRequest(Json(new TemplateParams { }));
         }
     }
+
     [HttpPost]
     public async Task<JsonResult> CreateNewProxmoxCred([FromBody] ProxmoxModel model) 
     {

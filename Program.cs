@@ -17,7 +17,7 @@ public class Program
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         //Add DBWorker for DB proccess
-        builder.Services.AddScoped<IProvision,DBWorker>();
+        builder.Services.AddScoped<IDBService,DBWorker>();
 
         var app = builder.Build();
 

@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 using static WebApplication1.Models.ConnectionModel;
 using System.Runtime.CompilerServices;
 using WebApplication1.Data;
+using WebApplication1.Data.WEB;
 
 namespace WebApplication1.Controllers;
 
 public class RancherController : Controller
 {
     private readonly ILogger<RancherController> _logger;
-    private readonly IProvision _dbWorker;
+    private readonly IDBService _dbWorker;
 
-    public RancherController(ILogger<RancherController> logger,IProvision worker)
+    public RancherController(ILogger<RancherController> logger,IDBService worker)
     {
         _logger = logger;
         _dbWorker = worker;
@@ -30,31 +31,51 @@ public class RancherController : Controller
     }
 
     [HttpPost]
-    public async Task<JsonResult> CreateNewRancherCred([FromBody] RancherModel model)
+    public async Task<IActionResult> CreateNewRancherCred([FromBody] RancherModel model)
     {
-        if (string.IsNullOrEmpty(model.RancherURL))
+        if (model == null)
         {
-            return Json(new { Status = Status.WARNING, Message = "Rancher url is empty" });
+            return Ok(Json(new Response { Status = Status.ERROR, Message = "No data Provided" }));
         }
 
-        if (string.IsNullOrEmpty(model.RancherToken))
+        try
         {
-            return Json(new { Status = Status.WARNING, Message = "Rancher Token is empty" });
-        }
+            var rancherService = new RancherService(_dbWorker);
 
-        if (!await _dbWorker.CheckDBConnection())
+            return Ok( await rancherService.CreateNewRancherCred(model));
+        }
+        catch (Exception ex)
         {
-            return Json(new { Status = Status.ERROR, Message = "Database is unreachable" });
+            return BadRequest(Json(new Response { Status = Status.ERROR, Message = $"Some error in {nameof(CreateNewRancherCred)}" }));
         }
-
-        if (await _dbWorker.AddNewCred(model))
-        {
-            return Json(new { Status = Status.OK, Message = "New Rancher Creds was successfully added" });
-        }
-
-        return Json(new { Status = Status.WARNING, Message = "New Rancher Creds wasn`t added.\n" +
-            "Maybe you try to add existing data.\n Contact an adnimistrator"
-        });
     }
-    
+
+    //[HttpPost]
+    //public async Task<JsonResult> CreateNewRancherCred([FromBody] RancherModel model)
+    //{
+    //    if (string.IsNullOrEmpty(model.RancherURL))
+    //    {
+    //        return Json(new { Status = Status.WARNING, Message = "Rancher url is empty" });
+    //    }
+
+    //    if (string.IsNullOrEmpty(model.RancherToken))
+    //    {
+    //        return Json(new { Status = Status.WARNING, Message = "Rancher Token is empty" });
+    //    }
+
+    //    if (!await _dbWorker.CheckDBConnection())
+    //    {
+    //        return Json(new { Status = Status.ERROR, Message = "Database is unreachable" });
+    //    }
+
+    //    if (await _dbWorker.AddNewCred(model))
+    //    {
+    //        return Json(new { Status = Status.OK, Message = "New Rancher Creds was successfully added" });
+    //    }
+
+    //    return Json(new { Status = Status.WARNING, Message = "New Rancher Creds wasn`t added.\n" +
+    //        "Maybe you try to add existing data.\n Contact an adnimistrator"
+    //    });
+    //}
+
 }

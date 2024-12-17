@@ -6,7 +6,7 @@ using WebApplication1.Data;
 
 namespace WebApplication1.Data;
 
-public class DBWorker : IProvision
+public class DBWorker : IDBService
 {
     private readonly MainDBContext _dbContext;
     private readonly ILogger<DBWorker> _logger;
