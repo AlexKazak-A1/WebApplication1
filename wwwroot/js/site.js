@@ -60,9 +60,10 @@ async function createCluster() {
                 if (data.value.status === 200) {
                     isClasterCreated = true;
                 }
+                return data;
             });
 
-        if (true) {   //  (result.value.status === 200) {
+        if ((result.value.status === 200 && isClasterCreated) || result.value.status === 409) {   //  (true) {
             
             showNotification(105, 'Test cluster creation started.\n Used only for Proxmox Provision test');
             //await wait(5);
@@ -103,14 +104,14 @@ async function createCluster() {
 
             const connString = await GetConnectionStringToRancher(clusterInfo);
 
-            //const vmIDs = await startCreatingProxmoxVMs(data);  //   <--  Remove comment to start proxmox privision
+            let vmIDs = await startCreatingProxmoxVMs(data);  //   <--  Remove comment to start proxmox privision
 
             //if (connString !== '' && vmIDs.length > 0) {
             //    await StartVMsAndConnectToRuncher(connString, vmIDs);
             //}
-
-            let vmIDArray = [100, 101];
-            await StartVMsAndConnectToRuncher(connString, vmIDArray);
+            //let connString = 'test';
+            //vmIDs = [100, 101];
+            await StartVMsAndConnectToRuncher(connString, vmIDs, selectedProxmoxValue);
         }
     }
     catch (error) {
@@ -142,7 +143,7 @@ async function postToController(url, data) {
     }
 }
 
-async function StartVMsAndConnectToRuncher(connString, vmIDs) {
+async function StartVMsAndConnectToRuncher(connString, vmIDs, proxmoxId) {
 
     showNotification(100, 'Connection of VM`s started');
 
@@ -154,7 +155,8 @@ async function StartVMsAndConnectToRuncher(connString, vmIDs) {
 
     const data = {
         connectionString: connString,
-        vmsId: vmIDs
+        vmsId: vmIDs,
+        proxmoxId: proxmoxId
     }
 
     let res = await postToController(url, data)
@@ -187,9 +189,18 @@ async function startCreatingProxmoxVMs(data) {
                             result.push(num);
                         }
                     }
+                    else if (item.status === 409) {
+                        showNotification(item.status, 'Already exist VM: ' + item.message);
+                        // Добавляем числовое значение из item.message в массив
+                        let num = parseInt(item.message, 10);
+                        if (!isNaN(num)) {
+                            result.push(num);
+                        }                        
+                    }
                     else {
-                        showNotification(item.status, item.message);
-                    }             
+                        showNotification(item.status, item.message); 
+                    }
+                           
                 });
             }
             return result; // Return array of vmIDs

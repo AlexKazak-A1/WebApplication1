@@ -60,7 +60,7 @@ public class ConnectionController : Controller
             return Json(new UrlCheckResponse { IsValid = false, Message = "Token is required. Check bouth TokenID & TokenSecret" });
         }
 
-        model.Url += ":8006/api2/json/version";
+        model.Url += "/api2/json/version";
 
         bool isValid = await CheckUrlAvailabilityAsync(url: model.Url, isBearer: false, token: model.TokenID, user: model.UserName, tokenSectet: model.TokenSecret);
         return Json(new UrlCheckResponse

@@ -35,7 +35,7 @@
         <form id="urlForm">
             <div>
                 <label for="urlProxmox">URL:</label>
-                <input type="url" id="urlProxmox" name="urlProxmox" asp-for="ProxmoxCheckModel.Url" placeholder="https://F.Q.D.N" required />
+                <input type="url" id="urlProxmox" name="urlProxmox" asp-for="ProxmoxCheckModel.Url" placeholder="https://F.Q.D.N:<port>" required />
             </div>
             <div>
                 <label for="urlProxmox">Username:</label>
@@ -113,7 +113,7 @@
                 resultRancherDiv.html('<p style="color: blue;">Checking...</p>');
 
                 $.ajax({
-                    url: '/Rancher/CheckRancherUrl',
+                    url: '/Connection/CheckRancherUrl',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ url: urlValue, token: tokenValue }),

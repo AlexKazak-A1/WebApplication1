@@ -12,6 +12,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Controllers;
 
+
 public class ProvisionController : Controller
 {
     private readonly ILogger<ProvisionController> _logger;
@@ -138,9 +139,15 @@ public class ProvisionController : Controller
                 }
                 else
                 {
-                    responseList.Add(new Response { Status = Status.WARNING, Message = str.ToString() });
-                }
-                
+                    if (str is string response && response.Contains("already exist"))
+                    {
+                        responseList.Add(new Response { Status = Status.ALREADY_EXIST, Message = response.Split(' ')[0] });
+                    }
+                    else
+                    {
+                        responseList.Add(new Response { Status = Status.WARNING, Message = str.ToString() });
+                    }                    
+                }                
             }
 
             //var message = JsonConvert.SerializeObject(responseList);
@@ -174,17 +181,26 @@ public class ProvisionController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> StartVMAndConnectToRancher([FromForm] ConnectVmToRancherDTO data)
+    public async Task<IActionResult> StartVMAndConnectToRancher([FromBody] ConnectVmToRancherDTO data)
     {
         if (data == null)
         {
             return BadRequest(Json(new Response { Status = Status.ERROR, Message = "Input data can't be null" }));
         }
 
+        
+        if(!int.TryParse(data.ProxmoxId, out int currentProxmoxId))
+        {
+            return Ok(Json(new Response { Status = Status.WARNING, Message = "Wrong type of ProxmoxId" }));
+        }
+
         try
         {
             var proxmoxService = new ProxmoxService(_logger, _dbWorker);
-            //var t = await proxmoxService;
+
+            var vmsRunningState = await proxmoxService.StartVmsAsync(data.VMsId, currentProxmoxId);
+
+            var vmsReadyStatus = await proxmoxService.WaitReadyStatusAsync(vmsRunningState, currentProxmoxId);
 
             return Ok(Json(new Response { Status = Status.OK, Message = "test Ok" }));
         }

@@ -77,6 +77,11 @@ public class DBWorker : IDBService
         }
     }
 
+    /// <summary>
+    /// Returns List of connection creds of specified connection type 
+    /// </summary>
+    /// <param name="connectionType">object of ConnectionType</param>
+    /// <returns>List of enum ConnectionType</returns>
     public async Task<object> GetConnectionCredsAsync(object connectionType)
     {
         if (connectionType is ConnectionType type)

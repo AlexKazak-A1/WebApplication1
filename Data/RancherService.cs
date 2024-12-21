@@ -60,6 +60,7 @@ public class RancherService
         {
             var currentRancher = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Rancher) as List<RancherModel>).First(x => x.Id == int.Parse(RancherId));
 
+            await Task.Delay(1500);
             var clusterId = await GetCurrentClusterID(currentRancher.RancherURL, currentRancher.RancherToken, ClusterName);
 
             var insecureConnString = await GetInsecureConnectionString(currentRancher.RancherURL, currentRancher.RancherToken, clusterId);
