@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using WebApplication1.Data;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
+using WebApplication1.Data.Database;
+using WebApplication1.Data.Interfaces;
+using WebApplication1.Data.Services;
 
 namespace WebApplication1;
 
@@ -11,17 +15,32 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-        //builder.Services.AddControllers();
+        builder.Services.AddControllers();
 
         // Add DBContext to conect to DB.
         builder.Services.AddDbContext<MainDBContext>(options => 
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         //Add DBWorker for DB proccess
-        builder.Services.AddScoped<IDBService,DBWorker>();
+        builder.Services.AddScoped<IDBService, DBWorker>();
 
-        //builder.Services.AddEndpointsApiExplorer();
-        //builder.Services.AddSwaggerGen();
+        //Add services for proxmox and rancher
+        builder.Services.AddScoped<IProxmoxService, ProxmoxService>();
+        builder.Services.AddScoped<IRancherService, RancherService>();
+        builder.Services.AddScoped<IConnectionService, ConnectionService>();
+        builder.Services.AddScoped<IProvisionService, ProvisionService>();
+
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.EnableAnnotations();
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Rancher To Proxmox API", Version = "v1" });
+
+            var basePath = AppContext.BaseDirectory;
+
+            var xmlPath = Path.Combine(basePath, "RancherToProxmoxAPI.xml");
+            c.IncludeXmlComments(xmlPath);
+        });
 
         var app = builder.Build();
 
@@ -47,10 +66,11 @@ public class Program
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
 
-
-
-        //app.UseSwagger();
-        //app.UseSwaggerUI();
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        });
 
         app.Run();
     }

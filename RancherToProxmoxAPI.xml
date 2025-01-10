@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>WebApplication1</name>
+    </assembly>
+    <members>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.GetConnectionCreds(WebApplication1.Data.WEB.ConnectionTypeDTO)">
+            <summary>
+            Search all connections of specified type in backend
+            </summary>
+            <param name="connectionTarget">Concret type on ConnectionType enum. Rancher = 0, Proxmox = 1</param>
+            <returns>Returns Json that contains List of creds on type</returns>
+        </member>
+        <member name="M:WebApplication1.Data.Database.DBWorker.GetConnectionCredsAsync(System.Object)">
+            <summary>
+            Returns List of connection creds of specified connection type 
+            </summary>
+            <param name="connectionType">object of ConnectionType</param>
+            <returns>List of enum ConnectionType</returns>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.NewId">
+            <summary>
+            VMID for the clone
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.Node">
+            <summary>
+            The cluster node name
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.VMId">
+            <summary>
+            The (unique) ID of the VM
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.Name">
+            <summary>
+            Sets a name for the new VM
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.Full">
+            <summary>
+            Create a full copy of all disks.
+            Better to enable for new VM`s
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Id">
+            <summary>
+            Full node name "node/{nodeName}"
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Status">
+            <summary>
+            Status unknown | online | offline
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Uptime">
+            <summary>
+            Node uptime in seconds.
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Disk">
+            <summary>
+            Current amount of used Disk size in bytes
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.MaxDisk">
+            <summary>
+            Maximal amount of Disk size in bytes
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Mem">
+            <summary>
+            Used memory in bytes.
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.MaxMem">
+            <summary>
+            Number of available memory in bytes.
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.SSL_Fingerprint">
+            <summary>
+            The SSL fingerprint for the node certificate.
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Node">
+            <summary>
+            The cluster node name.
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Type">
+            <summary>
+            Type of object (possible node | cluster)
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Level">
+            <summary>
+            Support level.
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.MaxCpu">
+            <summary>
+            Number of available CPUs.
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Cpu">
+            <summary>
+            CPU utilization.
+            </summary>
+        </member>
+        <member name="M:WebApplication1.Data.Services.ProxmoxService.CreateVmOfType(WebApplication1.Data.Enums.ClusterElemrntType,WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
+            <summary>
+            Create VM of specified type. Must be used after CheckAllParamsAsync()
+            </summary>
+            <param name="elemrntType">Type from ClusterElemrntType enum.</param>
+            <param name="vmInfo">Instance of CreateVmDTO.</param>
+            <returns></returns>
+        </member>
+        <member name="T:WebApplication1.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:WebApplication1.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WebApplication1.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WebApplication1.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>

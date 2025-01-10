@@ -2,9 +2,10 @@
 using Microsoft.Extensions.Logging;
 using System;
 using WebApplication1.Models;
-using WebApplication1.Data;
+using WebApplication1.Data.Interfaces;
+using WebApplication1.Data.Enums;
 
-namespace WebApplication1.Data;
+namespace WebApplication1.Data.Database;
 
 public class DBWorker : IDBService
 {
@@ -33,23 +34,23 @@ public class DBWorker : IDBService
     }
 
     public async Task<bool> AddNewCred(object model)
-    {        
+    {
         try
         {
-            if(model is ProxmoxModel)
+            if (model is ProxmoxModel)
             {
                 _logger.LogInformation("Adding new Proxmox Creds");
-                if (await _dbContext.Proxmox.Where(x => 
+                if (await _dbContext.Proxmox.Where(x =>
                     x.ProxmoxURL == (model as ProxmoxModel).ProxmoxURL &&
                     x.ProxmoxToken == (model as ProxmoxModel).ProxmoxToken)
-                    .AnyAsync()) 
+                    .AnyAsync())
                 {
-                    throw new ArgumentException("This creds already exist",nameof(model));
+                    throw new ArgumentException("This creds already exist", nameof(model));
                 }
 
                 await _dbContext.Proxmox.AddAsync(model as ProxmoxModel);
             }
-            else if(model is RancherModel)
+            else if (model is RancherModel)
             {
                 _logger.LogInformation("Adding new Rancher Creds");
                 if (await _dbContext.Rancher.Where(x =>
@@ -66,7 +67,7 @@ public class DBWorker : IDBService
                 _logger.LogWarning("Adding error. Wrong input Type.");
                 return false;
             }
-            
+
             await _dbContext.SaveChangesAsync();
             return true;
         }
@@ -89,9 +90,9 @@ public class DBWorker : IDBService
             switch (type)
             {
                 case ConnectionType.Rancher:
-                    {                        
+                    {
                         return await _dbContext.Rancher.Select(x => x).ToListAsync();
-                    }                    
+                    }
 
                 case ConnectionType.Proxmox:
                     {

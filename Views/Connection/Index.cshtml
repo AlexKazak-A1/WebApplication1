@@ -113,12 +113,12 @@
                 resultRancherDiv.html('<p style="color: blue;">Checking...</p>');
 
                 $.ajax({
-                    url: '/Connection/CheckRancherUrl',
+                    url: baseURL + 'api/Connection/CheckRancherUrl',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ url: urlValue, token: tokenValue }),
                     success: function (data) {
-                        if (data.isValid) {
+                        if (data.value.isValid) {
                             resultRancherDiv.html('<p style="color: green;">OK</p>');
                             isRancherChecked = true;
                             saveToCookies('rancherUrl', urlValue);
@@ -155,12 +155,12 @@
                 resultProxmoxDiv.html('<p style="color: blue;">Checking...</p>');
 
                 $.ajax({
-                    url: '/Connection/CheckProxmoxUrl',
+                    url: baseURL + 'api/Connection/CheckProxmoxUrl',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ url: urlValue, username: usernameValue, tokenid: tokenIDValue, tokensecret: tokenSecValue }),
                     success: function (data) {
-                        if (data.isValid) {
+                        if (data.value.isValid) {
                             resultProxmoxDiv.html('<p style="color: green;">OK</p>');
                             isProxmoxChecked = true;
                             saveToCookies('proxmoxUrl', urlValue);

@@ -8,7 +8,7 @@ public class CreateVMsDTO
     public int ProxmoxId { get; set; }
 
     [JsonProperty("etcdAndControlPlaneAmount")]
-    public int EtcdAndCPlaneAmount { get; set; }
+    public int EtcdAndControlPlaneAmount { get; set; }
 
     [JsonProperty("workerAmount")]
     public int WorkerAmount { get; set; }

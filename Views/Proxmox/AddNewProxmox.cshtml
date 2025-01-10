@@ -13,7 +13,7 @@
         <form id="proxmoxCredForm">
             <div>
                 <label for="urlProxmox">URL:</label>
-                <input type="url" id="urlProxmox" name="urlProxmox" asp-for="ProxmoxURL" placeholder="https://F.Q.D.N:port" required />
+                <input type="url" id="urlProxmox" name="urlProxmox" asp-for="ProxmoxURL" placeholder="https://F.Q.D.N:<port>" required />
             </div>
             <div>
                 <label for="urlProxmox">Username:</label>
@@ -67,7 +67,7 @@
    
     // Process addButton request
     function createNewProxmoxCred() { 
-        const url = '/Proxmox/CreateNewProxmoxCred';
+        const url = baseURL + 'api/Proxmox/CreateNewProxmoxCred';
         const data = {
             proxmoxurl: proxmox_URL,
             proxmoxtoken: proxmox_Token,
@@ -76,7 +76,7 @@
 
         postToController(url, data)
         .then(result => {           
-            showNotification(result.status, result.message);
+            showNotification(result.value.status, result.value.message);
         })
         .catch(error => {
             //If Error — JSON, get required fields
@@ -110,12 +110,12 @@
         button.html('<p style="color: blue; text-align: center">Checking...</p>');
 
         $.ajax({
-            url: '/Connection/CheckProxmoxUrl',
+            url: baseURL + 'api/Connection/CheckProxmoxUrl',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ url: urlValue, username: usernameValue, tokenid: tokenIDValue, tokensecret: tokenSecValue }),
             success: function (data) {
-                if (data.isValid) {
+                if (data.value.isValid) {
                     button.html('<p style="color: green; text-align: center">OK</p>');
                     isProxmoxChecked = true;
                     proxmox_URL = urlValue;

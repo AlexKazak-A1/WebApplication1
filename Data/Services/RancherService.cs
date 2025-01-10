@@ -1,23 +1,23 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Newtonsoft.Json.Linq;
-using System;
 using Newtonsoft.Json;
 using WebApplication1.Data.RancherDTO;
+using WebApplication1.Data.Interfaces;
+using WebApplication1.Data.Enums;
 
-namespace WebApplication1.Data;
+namespace WebApplication1.Data.Services;
 
-public class RancherService
+public class RancherService : IRancherService
 {
     private readonly IDBService _dbWorker;
+    private readonly ILogger<RancherService> _logger;
 
-    public RancherService(IDBService dbWorker)
+    public RancherService (ILogger<RancherService> logger, IDBService dbWorker)
     {
+        _logger = logger;
         _dbWorker = dbWorker;
     }
 
-    [HttpPost]
     public async Task<JsonResult> CreateNewRancherCred([FromBody] RancherModel model)
     {
         if (string.IsNullOrEmpty(model.RancherURL))
@@ -48,7 +48,6 @@ public class RancherService
         });
     }
 
-    [HttpPost]
     public async Task<string> GetConnectionString(string RancherId, string ClusterName)
     {
         if (RancherId == null || ClusterName == null)
@@ -64,11 +63,11 @@ public class RancherService
             var clusterId = await GetCurrentClusterID(currentRancher.RancherURL, currentRancher.RancherToken, ClusterName);
 
             var insecureConnString = await GetInsecureConnectionString(currentRancher.RancherURL, currentRancher.RancherToken, clusterId);
-            
+
 
             return insecureConnString;
         }
-        catch (Exception ex) 
+        catch (Exception ex)
         {
             return string.Empty;
         }
@@ -80,18 +79,18 @@ public class RancherService
         var response = await PostToRancher(url, token);
         var result = JsonConvert.DeserializeObject<List<ClusterStatusDTO>>(response);
 
-        foreach (var item in result) 
+        foreach (var item in result)
         {
             if (item.Metada.Name.Equals(clusterName))
             {
                 return item.Status.ClusterName;
             }
-        }   
+        }
 
         return "";
     }
 
-    private async Task<string> GetInsecureConnectionString(string url , string token, string clusterID)
+    private async Task<string> GetInsecureConnectionString(string url, string token, string clusterID)
     {
         url += "/v3/clusterregistrationtokens";
         var responce = await PostToRancher(url, token);
@@ -110,7 +109,7 @@ public class RancherService
         using var httpClient = new HttpClient(handler);
         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-       
+
 
         var response = await httpClient.SendAsync(request);
         var resultTest = await response.Content.ReadAsStringAsync();

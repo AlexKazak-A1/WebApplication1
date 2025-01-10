@@ -53,12 +53,12 @@
         button.html('<p style="color: blue; text-align: center">Checking...</p>');
 
         $.ajax({
-            url: '/Connection/CheckRancherUrl',
+            url: baseURL + 'api/Connection/CheckRancherUrl',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ url: url, token: tokenRancher }),
             success: function (data) {
-                if (data.isValid) {
+                if (data.value.isValid) {
                     button.html('<p style="color: green; text-align: center">OK</p>');
                     isRancherChecked = true;
                     rancher_URL = url;
@@ -93,7 +93,7 @@
 
     // Process addButton request
     function createNewRancherCred() {
-        const url = '/Rancher/CreateNewRancherCred';
+        const url = baseURL + 'api/Rancher/CreateNewRancherCred';
         const data = {
             rancherurl: rancher_URL,
             ranchertoken: rancher_Token,

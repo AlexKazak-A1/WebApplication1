@@ -1,4 +1,4 @@
-﻿namespace WebApplication1.Data;
+﻿namespace WebApplication1.Data.Interfaces;
 
 public interface IDBService
 {
@@ -7,5 +7,5 @@ public interface IDBService
     public Task<bool> AddNewCred(object model);
 
     public Task<object> GetConnectionCredsAsync(object connectionType);
-    
+
 }

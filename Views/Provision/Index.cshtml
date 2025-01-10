@@ -51,7 +51,7 @@
             </div>
             <div>
                 <div class="column">
-                    <label for="vmPrefixInput">VM`s Start index</label>
+                    <label for="vmPrefixInput">VM`s Name Prefix</label>
                     <input type="text" id="vmPrefixInput" name="vmPrefixInput" placeholder="rke2-" />
                 </div>
             </div>
@@ -79,27 +79,36 @@
 
 <script>
     const workerInput = document.getElementById('workerNumber');
-    workerInput.addEventListener('input', function () {
-        if (this.value < 1) {
-            this.value = '';
-            showNotification(105,'Value must be in [1..50]');
-        }
-        else if (this.value > 50) {
-            this.value = 50;
-            showNotification(105,'Value must be in [1..50]');
-        }
+    workerInput.addEventListener('input', function (event) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+              // Logic to execute when the user finishes typing
+            const numberInput = event.target.value;
+            console.log("User finished input:", numberInput);
+            // Perform your validation or processing here
+            if (this.value < 1 || this.value > 50) {
+                this.value = '';
+                showNotification(105,'Value must be in [1..50]');
+            }            
+        }, 1000);
+        
     });
 
     const etcdAndCPInput = document.getElementById('etcdAndCPNumber');
-    etcdAndCPInput.addEventListener('input', function () {
-        let number = parseInt(this.value, 10);
-        if ( number === 1 || number === 3 || this.value == '' ) {
-            
-        }        
-        else {
-            this.value = '';
-            showNotification(105,'Only 1 or 3 Amount enabeled');
-        }
+    etcdAndCPInput.addEventListener('input', function (event) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+             // Logic to execute when the user finishes typing
+            const numberInput = event.target.value;
+            console.log("User finished input:", numberInput);
+            // Perform your validation or processing here
+            let number = parseInt(this.value, 10);
+            if ( number != 1 && number != 3 || this.value == '' ) {
+                this.value = '';
+                showNotification(105,'Only 1 or 3 Amount enabeled');
+            }
+        }, 1000);
+        
     });
 
     let timer;
@@ -158,8 +167,12 @@
                     proxmox: proxmoxValue                   
                 });
 
+                let number = parseInt(proxmoxValue, 10);
+                let data = {
+                    proxmoxId: number,
+                }
                 // Call your function here
-                getTemplates('/Proxmox/GetTemplate', 'select-vm-template', proxmoxValue);
+                getTemplates(baseURL + 'api/Proxmox/GetTemplate', 'select-vm-template', data);
             }
         }
 
@@ -212,18 +225,23 @@
             const workerRAM = document.getElementById('workerRAM');
             const workerHDD = document.getElementById('workerHDD');
 
-            let templateID = templateSelect.value;
+            let templateID = parseInt(templateSelect.value, 10);
+            let proxmoxId = parseInt(proxmoxSelect.value, 10);
 
-            const url = '/Proxmox/GetTemplateParams';
-            const data = templateID;
+            const url = baseURL + 'api/Proxmox/GetTemplateParams';
+            const data ={
+                proxmoxid: proxmoxId,
+                templateid: templateID,
+            }
+
 
             const result = await postToController(url, data);
 
             if (result.value)
             {
                 workerCPU.value = result.value.cpu;
-                workerRAM.value = parseFloat(result.value.ram).toFixed(2);
-                workerHDD.value = result.value.hdd;
+                workerRAM.value = parseFloat(result.value.ram).toFixed(1);
+                workerHDD.value = parseFloat(result.value.hdd).toFixed(1);
             }
         }
 
@@ -265,8 +283,184 @@
             Proxmox: 1
         };
         // getTemplates('/Proxmox/GetTemplate', 'select-template','');
-        await getTemplates('/Provision/GetConnectionCreds', 'select-rancher-template', ConnectionType.Rancher);
-        await getTemplates('/Provision/GetConnectionCreds', 'select-proxmox-template', ConnectionType.Proxmox);
+        await getTemplates(baseURL + 'api/Provision/GetConnectionCreds', 'select-rancher-template', {connectiontype: ConnectionType.Rancher});
+        await getTemplates(baseURL + 'api/Provision/GetConnectionCreds', 'select-proxmox-template', {connectiontype: ConnectionType.Proxmox});
 
     };
+
+    async function createCluster() {
+        try {
+            const select = document.getElementById('select-rancher-template');
+            const selectedValue = select.value;
+            const name = document.getElementById('clusterName');
+            const clusterName = name.value;
+
+            let isClasterCreated = false;
+
+            var url =baseURL +  'api/Provision/CreateClaster';
+            var data = {
+                RancherId: selectedValue,
+                ClusterName: clusterName
+            }
+
+            const result = await postToController(url, data)
+                .then(data => {
+                    showNotification(data.value.status, data.value.message);
+                    if (data.value.status === 200) {
+                        isClasterCreated = true;
+                    }
+                    return data;
+                });
+
+            if ((result.value.status === 200 && isClasterCreated) || result.value.status === 409) {   //  (true) {
+
+                showNotification(105, 'Test cluster creation started.\n Used only for Proxmox Provision test');
+                //await wait(5);
+
+                const selectProxmox = document.getElementById('select-proxmox-template');
+                const selectedProxmoxValue = selectProxmox.value;
+
+                const amountOfWorkers = document.getElementById('workerNumber');
+                const amount = amountOfWorkers.value;
+
+                const template = document.getElementById('select-vm-template');
+                const templateId = template.value;
+
+                const etcdAndCPInput = document.getElementById('etcdAndCPNumber');
+                const etcdCPAmount = etcdAndCPInput.value;
+
+                const vmStartIndex = document.getElementById('vmStartIndex');
+                const startIndexValue = vmStartIndex.value;
+
+                const vmPrefixInput = document.getElementById('vmPrefixInput');
+                let vmPrefixValue = vmPrefixInput.value;
+
+                const data = {
+                    etcdAndControlPlaneAmount: etcdCPAmount,
+                    workerAmount: amount,
+                    proxmoxId: selectedProxmoxValue,
+                    vmTemplateId: templateId,
+                    rancherId: selectedValue,
+                    clusterName: clusterName,
+                    vmStartIndex: startIndexValue,
+                    vmPrefix: vmPrefixValue,
+                }
+
+                const clusterInfo = {
+                    rancherId: selectedValue,
+                    clusterName: clusterName,
+                }
+
+                const connString = await GetConnectionStringToRancher(clusterInfo);
+
+                let vmIDs = await startCreatingProxmoxVMs(data);  //   <--  Remove comment to start proxmox privision
+
+                //if (connString !== '' && vmIDs.length > 0) {
+                //    await StartVMsAndConnectToRuncher(connString, vmIDs);
+                //}
+                //let connString = 'test';
+                //vmIDs = [100, 101];
+                await StartVMsAndConnectToRuncher(connString, vmIDs, selectedProxmoxValue);
+            }
+        }
+        catch (error) {
+            console.error('Connection error:', error);
+        }
+    }
+
+    async function StartVMsAndConnectToRuncher(connString, vmIDs, proxmoxId) {
+
+        showNotification(100, 'Connection of VM`s started');
+
+        const url = baseURL + 'api/Provision/StartVMAndConnectToRancher';
+        //const data = {
+        //    connectionString: connString,
+        //    vmsId: vmIDs
+        //}
+
+        const data = {
+            connectionString: connString,
+            vmsId: vmIDs,
+            proxmoxId: proxmoxId
+        }
+
+        let res = await postToController(url, data)
+            .then(result => {
+                showNotification(result.value.status, result.value.message);
+                return result.value;
+            });
+    }
+
+    async function startCreatingProxmoxVMs(data) {
+
+        showNotification(100, 'Creation of VM`s started');
+
+        //await wait(5);
+
+        const url = baseURL +  'api/Provision/CreateProxmoxVMs';
+
+        let vmIDs = await postToController(url, data)
+            .then(data => {
+                let result = [];
+
+                // Проверка на существование данных и массива в свойстве "value"
+                if (data && Array.isArray(data.value)) {
+                    data.value.forEach(item => {
+                        if (item.status === 200) {
+                            showNotification(item.status, 'Successfuly created VM: ' + item.message);
+                            // Добавляем числовое значение из item.message в массив
+                            let num = parseInt(item.message, 10);
+                            if (!isNaN(num)) {
+                                result.push(num);
+                            }
+                        }
+                        else if (item.status === 409) {
+                            showNotification(item.status, 'Already exist VM: ' + item.message);
+                            // Добавляем числовое значение из item.message в массив
+                            let num = parseInt(item.message, 10);
+                            if (!isNaN(num)) {
+                                result.push(num);
+                            }
+                        }
+                        else {
+                            showNotification(item.status, item.message);
+                        }
+
+                    });
+                }
+                return result; // Return array of vmIDs
+            });
+
+        //let vmsId = await postToController(url, data)
+        //    .then(data => {
+        //        // Extract the array from the "value" property
+        //        if (data && Array.isArray(data.value)) {
+        //            data.value.forEach(item => {
+        //                if (item.status === 200) {
+        //                    showNotification(item.status, 'Successfuly created VM: ' + item.message);
+        //                }
+        //                else {
+        //                    showNotification(item.status, item.message);
+        //                }
+        //            });
+        //        }
+        //    });
+
+        return vmIDs;
+    }
+
+    async function GetConnectionStringToRancher(data) {
+
+        const url = baseURL + 'api/Provision/GetConnectionStringToRancher';
+
+        let result = await postToController(url, data)
+            .then(data => {
+                // Extract the array from the "value" property
+                if (data.value.status === 200) {
+                    return data.value.message;
+                }
+            });
+
+        return result;
+    }
 </script>
