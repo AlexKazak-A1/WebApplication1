@@ -17,4 +17,6 @@ public interface IProvisionService
     public Task<JsonResult> GetConnectionStringToRancher([FromBody] CreateClusterDTO clusterInfo);
 
     public Task<JsonResult> StartVMAndConnectToRancher([FromBody] ConnectVmToRancherDTO data);
+
+    public Task<JsonResult> GetCreationAvailibility(CreateVMsDTO info);
 }

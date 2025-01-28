@@ -115,11 +115,16 @@ public class ProvisionService : IProvisionService
     {
         try
         {
-            //var param = JsonConvert.DeserializeObject<CreateVMsDTO>(data.ToString());
+            var responseList = new List<Response>();
 
+            //var param = JsonConvert.DeserializeObject<CreateVMsDTO>(data.ToString());
+            //if (!await _proxmoxService.CheckCreationAbility(param))
+            //{
+            //    responseList.Add(new Response { Status = Status.ERROR, Message = "Can not create vms, because of resource limit" });
+            //}
             var creationVMsResult = await _proxmoxService.StartProvisioningVMsAsync(param);
 
-            var responseList = new List<Response>();
+           
 
             foreach (var str in creationVMsResult as List<object>)
             {
@@ -183,7 +188,7 @@ public class ProvisionService : IProvisionService
         {
             var vmsRunningState = await _proxmoxService.StartVmsAsync(data.VMsId, currentProxmoxId);
 
-            // var vmsReadyStatus = await _proxmoxService.WaitReadyStatusAsync(vmsRunningState, currentProxmoxId, data.ConnectionString);
+            //var vmsReadyStatus = await _proxmoxService.WaitReadyStatusAsync(vmsRunningState, currentProxmoxId, data.ConnectionString);
 
             return new JsonResult(new Response { Status = Status.OK, Message = "test ready status check is Ok" });
         }
@@ -192,7 +197,7 @@ public class ProvisionService : IProvisionService
             throw new Exception($"Check {nameof(StartVMAndConnectToRancher)} in {nameof(ProvisionService)}", ex);
         }
     }
-
+    
     private async Task<List<SelectOptionDTO>> GetCreds(object inputType)
     {
         var selectList = new List<SelectOptionDTO>();
@@ -235,12 +240,34 @@ public class ProvisionService : IProvisionService
     private string SetPayload(string newClusterName = "NewClusterName")
     {
         // Updating name of new cluster
-        var stringJson = "{\"type\":\"provisioning.cattle.io.cluster\",\"metadata\":{\"namespace\":\"fleet-default\",\"name\":\"testing\"},\"spec\":{\"rkeConfig\":{\"chartValues\":{\"rke2-calico\":{}},\"upgradeStrategy\":{\"controlPlaneConcurrency\":\"1\",\"controlPlaneDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120},\"workerConcurrency\":\"1\",\"workerDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120}},\"machineGlobalConfig\":{\"cni\":\"calico\",\"disable-kube-proxy\":false,\"etcd-expose-metrics\":false},\"machineSelectorConfig\":[{\"config\":{\"protect-kernel-defaults\":false}}],\"etcd\":{\"disableSnapshots\":false,\"s3\":null,\"snapshotRetention\":5,\"snapshotScheduleCron\":\"0 */5 * * *\"},\"registries\":{\"configs\":{},\"mirrors\":{}},\"machinePools\":[]},\"machineSelectorConfig\":[{\"config\":{}}],\"kubernetesVersion\":\"v1.26.15+rke2r1\",\"defaultPodSecurityPolicyTemplateName\":\"\",\"defaultPodSecurityAdmissionConfigurationTemplateName\":\"\",\"localClusterAuthEndpoint\":{\"enabled\":false,\"caCerts\":\"\",\"fqdn\":\"\"}}}";
-        dynamic jsonObject = JsonConvert.DeserializeObject<dynamic>(stringJson);
-        jsonObject.metadata.name = newClusterName;
-        stringJson = JsonConvert.SerializeObject(jsonObject);
+        var stringJson = "{\"type\":\"provisioning.cattle.io.cluster\",\"metadata\":{\"namespace\":\"fleet-default\",\"name\":\"NameHere\"},\"spec\":{\"rkeConfig\":{\"chartValues\":{\"rke2-calico\":{}},\"upgradeStrategy\":{\"controlPlaneConcurrency\":\"1\",\"controlPlaneDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120},\"workerConcurrency\":\"1\",\"workerDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120}},\"machineGlobalConfig\":{\"cni\":\"calico\",\"disable-kube-proxy\":false,\"etcd-expose-metrics\":false},\"machineSelectorConfig\":[{\"config\":{\"protect-kernel-defaults\":false}}],\"etcd\":{\"disableSnapshots\":false,\"s3\":null,\"snapshotRetention\":5,\"snapshotScheduleCron\":\"0 */5 * * *\"},\"registries\":{\"configs\":{},\"mirrors\":{}},\"machinePools\":[]},\"machineSelectorConfig\":[{\"config\":{}}],\"kubernetesVersion\":\"v1.26.15+rke2r1\",\"defaultPodSecurityPolicyTemplateName\":\"\",\"defaultPodSecurityAdmissionConfigurationTemplateName\":\"\",\"localClusterAuthEndpoint\":{\"enabled\":false,\"caCerts\":\"\",\"fqdn\":\"\"}}}";
+        stringJson = stringJson.Replace("NameHere", newClusterName);
 
         return stringJson;
     }
 
+    public async Task<JsonResult> GetCreationAvailibility(CreateVMsDTO info)
+    {
+        
+        if (info == null)
+        {
+            return new JsonResult(new Response { Status = Status.ERROR, Message = $"info is null in {nameof(GetCreationAvailibility)}" });
+        }
+
+        try
+        {
+            var result = await _proxmoxService.CheckCreationAbility(info);
+
+            if (result)
+            {
+                return new JsonResult(new Response { Status = Status.OK, Message = "Cluster can be Created" });
+            }
+
+            return new JsonResult(new Response { Status = Status.ERROR, Message = "Cluster can`t be Created" });
+        }
+        catch (Exception ex)
+        {
+            return new JsonResult(new Response { Status = Status.ERROR, Message = $"Error in in {nameof(GetCreationAvailibility)}" });
+        }
+    }
 }

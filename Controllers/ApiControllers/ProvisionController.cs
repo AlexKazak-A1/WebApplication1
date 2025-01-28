@@ -5,6 +5,7 @@ using WebApplication1.Data.Interfaces;
 using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.RancherDTO;
 using WebApplication1.Data.WEB;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
@@ -30,7 +31,7 @@ public class ProvisionController : ControllerBase
     public async Task<IActionResult> GetConnectionCreds([FromBody] ConnectionTypeDTO connectionTarget)
     {
         try
-        {
+        {            
             var result = await _provisionService.GetConnectionCreds(connectionTarget.ConnectionType);
             return Ok(result);
         }
@@ -99,4 +100,17 @@ public class ProvisionController : ControllerBase
         }
     }
 
+    [HttpPost]
+    public async Task<IActionResult> GetCreationAvailibility([FromBody] CreateVMsDTO info)
+    {
+        try
+        {
+            var result = await _provisionService.GetCreationAvailibility(info);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = ex.Message }));
+        }
+    }
 }

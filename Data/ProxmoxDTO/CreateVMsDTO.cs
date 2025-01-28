@@ -13,8 +13,8 @@ public class CreateVMsDTO
     [JsonProperty("workerAmount")]
     public int WorkerAmount { get; set; }
 
-    [JsonProperty("vmTemplateId")]
-    public int VMTemplateId { get; set; }
+    [JsonProperty("vmTemplateName")]
+    public string VMTemplateName { get; set; }
 
     [JsonProperty("rancherId")]
     public int RancherId { get; set; }
@@ -27,4 +27,7 @@ public class CreateVMsDTO
 
     [JsonProperty("vmPrefix")]
     public string VMPrefix { get; set; } = string.Empty;
+
+    [JsonProperty("vmConfig")]
+    public TemplateParams VMConfig { get; set; }
 }

@@ -16,6 +16,7 @@ public class Program
         // Add services to the container.
         builder.Services.AddControllersWithViews();
         builder.Services.AddControllers();
+        builder.Configuration.AddEnvironmentVariables();
 
         // Add DBContext to conect to DB.
         builder.Services.AddDbContext<MainDBContext>(options => 

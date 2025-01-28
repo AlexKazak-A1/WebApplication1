@@ -21,4 +21,11 @@ public interface IProxmoxService
     public Task<JsonResult> GetTemplateParams([FromBody] TemplateIdDTO data);
 
     public Task<JsonResult> CreateNewProxmoxCred([FromBody] ProxmoxModel model);
+
+    /// <summary>
+    /// Checks an ability to create all vms according to oversubscription
+    /// </summary>
+    /// <param name="param">Info for creating VMs</param>
+    /// <returns>Boolean True = Available, False = Not</returns>
+    public Task<bool> CheckCreationAbility(CreateVMsDTO param);
 }

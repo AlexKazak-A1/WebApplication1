@@ -18,6 +18,13 @@
             <param name="connectionType">object of ConnectionType</param>
             <returns>List of enum ConnectionType</returns>
         </member>
+        <member name="M:WebApplication1.Data.Interfaces.IProxmoxService.CheckCreationAbility(WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
+            <summary>
+            Checks an ability to create all vms according to oversubscription
+            </summary>
+            <param name="param">Info for creating VMs</param>
+            <returns>Boolean True = Available, False = Not</returns>
+        </member>
         <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.NewId">
             <summary>
             VMID for the clone
@@ -109,6 +116,23 @@
             CPU utilization.
             </summary>
         </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.VmInfoDTO.Cpu">
+            <summary>
+            Amount currently user CPU
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.VmInfoDTO.CPUS">
+            <summary>
+            Total Amount of CPU given to VM
+            </summary>
+        </member>
+        <member name="M:WebApplication1.Data.Services.ProxmoxService.CheckCreationAbility(WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
+            <summary>
+            Checks an ability to create all vms according to oversubscription
+            </summary>
+            <param name="param">Info for creating VMs</param>
+            <returns>Boolean True = Available, False = Not</returns>
+        </member>
         <member name="M:WebApplication1.Data.Services.ProxmoxService.CreateVmOfType(WebApplication1.Data.Enums.ClusterElemrntType,WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
             <summary>
             Create VM of specified type. Must be used after CheckAllParamsAsync()
@@ -116,6 +140,11 @@
             <param name="elemrntType">Type from ClusterElemrntType enum.</param>
             <param name="vmInfo">Instance of CreateVmDTO.</param>
             <returns></returns>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.ConnectionTypeDTO.ConnectionType">
+            <summary>
+            Representation of ConnectionType enum
+            </summary>
         </member>
         <member name="T:WebApplication1.Migrations.InitialCreate">
             <inheritdoc />

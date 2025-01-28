@@ -1,21 +1,31 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace WebApplication1.Data.ProxmoxDTO;
 
 public class ProxmoxQemuDTO
 {
-    [JsonPropertyName("status")]
+    [JsonProperty("status")]
     public string Status { get; set; }
 
-    [JsonPropertyName("serial")]
+    [JsonProperty("serial")]
     public bool Serial { get; set; }
 
-    [JsonPropertyName("template")]
+    [JsonProperty("template")]
     public bool Template { get; set; }
 
-    [JsonPropertyName("name")]
+    [JsonProperty("name")]
     public string Name { get; set; }
 
-    [JsonPropertyName("vmid")]
+    [JsonProperty("vmid")]
     public int VmId { get; set; }
+
+    [JsonProperty("maxmem")]
+    public ulong MaxMem { get; set; } = 0;
+
+    [JsonProperty("cpus")]
+    public int CPUs { get; set; } = 0;
+
+    [JsonProperty("maxdisk")]
+    public ulong MaxDisk { get; set; } = 0;
+
 }

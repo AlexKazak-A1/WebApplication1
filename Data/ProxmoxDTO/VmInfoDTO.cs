@@ -4,12 +4,18 @@ namespace WebApplication1.Data.ProxmoxDTO;
 
 public class VmInfoDTO
 {
+    /// <summary>
+    /// Amount currently user CPU
+    /// </summary>
     [JsonProperty("cpu")]
     public double Cpu { get; set; }
 
     [JsonProperty("vmid")]
     public int VmId { get; set; }
 
+    /// <summary>
+    /// Total Amount of CPU given to VM
+    /// </summary>
     [JsonProperty("cpus")]
     public int CPUS { get; set; }
 
