@@ -30,4 +30,7 @@ public class CreateVMsDTO
 
     [JsonProperty("vmConfig")]
     public TemplateParams VMConfig { get; set; }
+
+    [JsonProperty("etcdConfig")]
+    public TemplateParams etcdConfig { get; set; }
 }

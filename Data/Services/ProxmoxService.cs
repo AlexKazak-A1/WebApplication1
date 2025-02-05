@@ -13,6 +13,8 @@ using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.WEB;
 using WebApplication1.Models;
 using WebApplication1.Data.ProxmoxDTO.Node;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace WebApplication1.Data.Services;
 
@@ -186,7 +188,7 @@ public class ProxmoxService : IProxmoxService
 
         foreach (var vm in vmsRunningState)
         {
-            // await Task.Run(async () => await GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
+            await Task.Run(async () => await GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
         }
 
         var t = 0;
@@ -298,8 +300,9 @@ public class ProxmoxService : IProxmoxService
     /// Checks an ability to create all vms according to oversubscription
     /// </summary>
     /// <param name="param">Info for creating VMs</param>
+    /// <param name="VMsAllocation"></param>
     /// <returns>Boolean True = Available, False = Not</returns>
-    public async Task<bool> CheckCreationAbility(CreateVMsDTO param)
+    public async Task<Dictionary<string, string>?> CheckCreationAbility(CreateVMsDTO param)
     {
         try
         {
@@ -307,17 +310,19 @@ public class ProxmoxService : IProxmoxService
             var oversubConfig = _configuration["OverSubscriptionLimit"] ?? "2.5";
             var CPU_USAGE_LIMIT = double.Parse(cpuLimitConfig, CultureInfo.InvariantCulture);
             var OVERSUBSCRIPTION_LIMIT = double.Parse(oversubConfig, CultureInfo.InvariantCulture);
+            var master = "master";
+            var worker = "worker";
 
             if (param == null)
             {
-                return false;
+                return null;
             }
 
             var currentProxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == param.ProxmoxId).FirstOrDefault();
 
             if (currentProxmox == null)
             {
-                return false;
+                return null;
             }
 
             var allNodesInfo = await GetProxmoxNodesListAsync(param.ProxmoxId);
@@ -325,7 +330,7 @@ public class ProxmoxService : IProxmoxService
 
             if (!nodeList.Any())
             {
-                return false;
+                return null;
             }
 
             var currentOversub = new Dictionary<string, NodeOversubscriptionDTO>();
@@ -335,33 +340,64 @@ public class ProxmoxService : IProxmoxService
                 currentOversub.Add(node, nodeOversub);
             }
 
+            var vmsAllocation = new Dictionary<string, string>();
+
+            for (int i = 0; i < param.EtcdAndControlPlaneAmount; i++)
+            {
+                foreach (var node in currentOversub.Keys)
+                {
+                    if (!vmsAllocation.Contains(KeyValuePair.Create(node, master)) && currentOversub[node].CurrentOversubscription < OVERSUBSCRIPTION_LIMIT)
+                    {
+                        vmsAllocation.Add(node, master + $"-0{i + 1}");
+                        currentOversub[node].TotalAllocatedCPUs += int.Parse(param.etcdConfig.CPU);
+                        break;
+                    }
+
+                    return null;
+                }
+            }
+
+            for (int i = 0; i < param.WorkerAmount; i++)
+            {
+                var node = currentOversub.Where(x => x.Value.CurrentOversubscription == currentOversub.Min(y => y.Value.CurrentOversubscription)).FirstOrDefault().Key;
+                if (currentOversub[node].CurrentOversubscription < OVERSUBSCRIPTION_LIMIT)
+                {
+                    vmsAllocation.Add(node, worker + $"-0{i + 1}");
+                    currentOversub[node].TotalAllocatedCPUs += int.Parse(param.VMConfig.CPU);
+                    continue;
+                }
+
+                return null;
+            }
+            
 
             var t = 0;
-            return false;
+            return vmsAllocation;
         }
-        catch
+        catch (Exception ex)
         {
-
+            _logger.LogCritical($"Some error in {nameof(ProxmoxService.CheckCreationAbility)}\n" +
+                $"{ex.Message}");            
         }
 
-        return false;
+        return null;
     }
 
-    private async Task<NodeOversubscriptionDTO?> CountOversubscription(ProxmoxModel currentProx, string nodeName, double cpuLimit)
+    private async Task<NodeOversubscriptionDTO> CountOversubscription(ProxmoxModel currentProx, string nodeName, double cpuLimit)
     {
         var url = $"{currentProx.ProxmoxURL}/api2/json/nodes/{nodeName}/status";
         var clusterStatus = await SendRequestToProxmoxAsync(url, HttpMethod.Get, currentProx.ProxmoxToken);
 
         if (clusterStatus == null)
         {
-            return null;
+            return new NodeOversubscriptionDTO { TotalAllocatedCPUs = 6, TotalNodeCPU = 2 };
         }
 
         var nodeData = JsonConvert.DeserializeObject<ProxmoxNodeStatusDTO>(clusterStatus?.Data?.ToString()!);
 
         if (nodeData?.CPU > cpuLimit)
         {
-            return null;
+            return new NodeOversubscriptionDTO { TotalAllocatedCPUs = 6, TotalNodeCPU = 2 };
         }
 
         var totalCpus = 0;
@@ -656,26 +692,43 @@ public class ProxmoxService : IProxmoxService
     private async Task<bool> GetReadyStateOfVM(int proxmoxId, int vmId, ProxmoxModel currentProxmox, string connectionString)
     {
         var linuxCommand = "journalctl | grep 'cloud-init' | grep 'finished' | grep 'Up'";
-        var pidOfProccess = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
-        var IsVmReady = await GetCommandResult(proxmoxId, vmId, currentProxmox, pidOfProccess);
+        var IsVmReady = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
+        
+
 
         if (!IsVmReady)
         {
             return false;
         }
 
-        var vmName = (await GetVmInfoAsync(proxmoxId, vmId)).Name;
-        if (vmName.Contains("master"))
+        var listOfCommands = new List<string> 
         {
+            "sudo apt update -y",
+            "sudo apt upgrade -y",
+            "sudo apt install linux-generic nfs-common net-tools -y",
+            "sudo reboot",
+            
+        };
+
+        if (!await SendGroupOfCommands(proxmoxId, vmId, currentProxmox, listOfCommands)) 
+        {           
+            return false;
+        }
+
+        var vmName = (await GetVmInfoAsync(proxmoxId, vmId)).Name;
+        if (vmName.Contains("master") )
+        {
+
+
             linuxCommand = SetLinuxConnectCommand(connectionString, " --etcd --controlplane");
-            pidOfProccess = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
-            var m = await GetCommandResult(proxmoxId, vmId, currentProxmox, pidOfProccess);
+            var isMasterReady = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
+            
         }
         else if (vmName.Contains("worker"))
         {
             linuxCommand = SetLinuxConnectCommand(connectionString, " --worker");
-            pidOfProccess = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
-            var m = await GetCommandResult(proxmoxId, vmId, currentProxmox, pidOfProccess);
+            var isWorkerReady = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
+            
         }
 
         return true;
@@ -733,7 +786,7 @@ public class ProxmoxService : IProxmoxService
         }
     }
 
-    private async Task<int> SendQemuGuestCommand(int proxmoxId, int vmId, ProxmoxModel currentProxmox,string linuxCommand)
+    private async Task<bool> SendQemuGuestCommand(int proxmoxId, int vmId, ProxmoxModel currentProxmox,string linuxCommand)
     {        
         string node = await GetNodeName(proxmoxId,vmId);        
 
@@ -747,14 +800,20 @@ public class ProxmoxService : IProxmoxService
 
         var responce = await SendRequestToProxmoxAsync(url, HttpMethod.Post, currentProxmox.ProxmoxToken, payload);
 
-        if ( responce.Data == null)
+        while ( responce.Data == null)
         {
-            return await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
+            responce = await SendRequestToProxmoxAsync(url, HttpMethod.Post, currentProxmox.ProxmoxToken, payload);
         }
 
-        var res = JsonConvert.DeserializeObject<QemuGuestCommandResponceDTO>(responce.Data?.ToString());
+        var pid = JsonConvert.DeserializeObject<QemuGuestCommandResponceDTO>(responce.Data?.ToString()!)?.Pid ?? 0;
+        
+        var t = await GetCommandResult(proxmoxId, vmId, currentProxmox, pid);
 
-        return res.Pid;
+        return t;
+
+        return false;
+
+
     }
 
     private async Task<bool> GetCommandResult(int proxmoxId, int vmId, ProxmoxModel currentProxmox, int pid)
@@ -768,6 +827,7 @@ public class ProxmoxService : IProxmoxService
         {
             var result = await SendRequestToProxmoxAsync(url, HttpMethod.Get, currentProxmox.ProxmoxToken);
             var resultData = result.Data;
+
 
             if (resultData == null)
             {
@@ -817,7 +877,6 @@ public class ProxmoxService : IProxmoxService
         var https_proxy = _configuration["HTTPS_PROXY"] ?? "http://10.254.49.150:3128";
         var no_proxy = _configuration["NO_PROXY"] ?? "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by";
 
-        connectionString = "sudo apt update -y && sudo apt upgrade -y && sudo apt install linux-generic nfs-common net-tools -y | " + connectionString;
         connectionString = connectionString.Replace("sudo sh", $"sudo HTTP_PROXY=\"{http_proxy}\" HTTPS_PROXY=\"{https_proxy}\" NO_PROXY=\"{no_proxy}\" sh");
         var result = connectionString + typeConnestionTo;
         return result;
@@ -858,5 +917,25 @@ public class ProxmoxService : IProxmoxService
         }
     }
 
-    //private 
+    private async Task<bool> SendGroupOfCommands(int proxmoxId, int vmId, ProxmoxModel currentProxmox, List<string> list)
+    {
+        var resultList = new List<bool>();
+        foreach (var command in list)
+        {
+            resultList.Add(await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, command));
+
+            if (command.Contains("reboot"))
+            {
+                await Task.Delay(3 * 60000);
+            }
+        }
+
+        if (resultList.Contains(false))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
 }

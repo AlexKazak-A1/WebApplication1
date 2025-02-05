@@ -16,6 +16,7 @@ public class ProvisionService : IProvisionService
     private readonly IRancherService _rancherService;
     private readonly IProxmoxService _proxmoxService;
     private readonly IDBService _dbWorker;
+    private readonly IConfiguration _configuration;
 
     private string _rancherCreatePayload = string.Empty;
     public string RancherProvisionPayload
@@ -30,12 +31,13 @@ public class ProvisionService : IProvisionService
         }
     }
 
-    public ProvisionService(ILogger<ProvisionService> logger, IRancherService rancherService, IProxmoxService proxmoxService, IDBService dBService)
+    public ProvisionService(ILogger<ProvisionService> logger, IRancherService rancherService, IProxmoxService proxmoxService, IDBService dBService, IConfiguration configuration)
     {
         _logger = logger;
         _dbWorker = dBService;
         _proxmoxService = proxmoxService;
         _rancherService = rancherService;
+        _configuration = configuration;
         _rancherCreatePayload = SetPayload();
     }
 
@@ -188,7 +190,7 @@ public class ProvisionService : IProvisionService
         {
             var vmsRunningState = await _proxmoxService.StartVmsAsync(data.VMsId, currentProxmoxId);
 
-            //var vmsReadyStatus = await _proxmoxService.WaitReadyStatusAsync(vmsRunningState, currentProxmoxId, data.ConnectionString);
+            var vmsReadyStatus = await _proxmoxService.WaitReadyStatusAsync(vmsRunningState, currentProxmoxId, data.ConnectionString);
 
             return new JsonResult(new Response { Status = Status.OK, Message = "test ready status check is Ok" });
         }
@@ -240,8 +242,11 @@ public class ProvisionService : IProvisionService
     private string SetPayload(string newClusterName = "NewClusterName")
     {
         // Updating name of new cluster
-        var stringJson = "{\"type\":\"provisioning.cattle.io.cluster\",\"metadata\":{\"namespace\":\"fleet-default\",\"name\":\"NameHere\"},\"spec\":{\"rkeConfig\":{\"chartValues\":{\"rke2-calico\":{}},\"upgradeStrategy\":{\"controlPlaneConcurrency\":\"1\",\"controlPlaneDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120},\"workerConcurrency\":\"1\",\"workerDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120}},\"machineGlobalConfig\":{\"cni\":\"calico\",\"disable-kube-proxy\":false,\"etcd-expose-metrics\":false},\"machineSelectorConfig\":[{\"config\":{\"protect-kernel-defaults\":false}}],\"etcd\":{\"disableSnapshots\":false,\"s3\":null,\"snapshotRetention\":5,\"snapshotScheduleCron\":\"0 */5 * * *\"},\"registries\":{\"configs\":{},\"mirrors\":{}},\"machinePools\":[]},\"machineSelectorConfig\":[{\"config\":{}}],\"kubernetesVersion\":\"v1.26.15+rke2r1\",\"defaultPodSecurityPolicyTemplateName\":\"\",\"defaultPodSecurityAdmissionConfigurationTemplateName\":\"\",\"localClusterAuthEndpoint\":{\"enabled\":false,\"caCerts\":\"\",\"fqdn\":\"\"}}}";
+        var stringJson = "{\"type\":\"provisioning.cattle.io.cluster\",\"metadata\":{\"namespace\":\"fleet-default\",\"name\":\"NameHere\"},\"spec\":{\"rkeConfig\":{\"chartValues\":{\"rke2-calico\":{}},\"upgradeStrategy\":{\"controlPlaneConcurrency\":\"1\",\"controlPlaneDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120},\"workerConcurrency\":\"1\",\"workerDrainOptions\":{\"deleteEmptyDirData\":true,\"disableEviction\":false,\"enabled\":false,\"force\":false,\"gracePeriod\":-1,\"ignoreDaemonSets\":true,\"skipWaitForDeleteTimeoutSeconds\":0,\"timeout\":120}},\"machineGlobalConfig\":{\"cni\":\"calico\",\"disable-kube-proxy\":false,\"etcd-expose-metrics\":false},\"machineSelectorConfig\":[{\"config\":{\"protect-kernel-defaults\":false}}],\"etcd\":{\"disableSnapshots\":false,\"s3\":null,\"snapshotRetention\":5,\"snapshotScheduleCron\":\"0 */5 * * *\"},\"registries\":{\"configs\":{},\"mirrors\":{}},\"machinePools\":[]},\"machineSelectorConfig\":[{\"config\":{}}],\"kubernetesVersion\":\"v1.26.15+rke2r1\",\"defaultPodSecurityPolicyTemplateName\":\"\",\"defaultPodSecurityAdmissionConfigurationTemplateName\":\"\",\"localClusterAuthEndpoint\":{\"enabled\":false,\"caCerts\":\"\",\"fqdn\":\"\"},\"agentEnvVars\":[{\"name\":\"HTTP_PROXY\",\"value\":\"HTTP_PROXY_VALUE\"},{\"name\":\"HTTPS_PROXY\",\"value\":\"HTTPS_PROXY_VALUE\"},{\"name\":\"NO_PROXY\",\"value\":\"NO_PROXY_VALUE\"}]}}";
         stringJson = stringJson.Replace("NameHere", newClusterName);
+        stringJson = stringJson.Replace("HTTP_PROXY_VALUE", _configuration["HTTP_PROXY"] ?? "http://10.254.49.150:3128");
+        stringJson = stringJson.Replace("HTTPS_PROXY_VALUE", _configuration["HTTPS_PROXY"] ?? "http://10.254.49.150:3128");
+        stringJson = stringJson.Replace("NO_PROXY_VALUE", _configuration["NO_PROXY"] ?? "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by");
 
         return stringJson;
     }

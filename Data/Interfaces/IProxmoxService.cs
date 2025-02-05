@@ -28,4 +28,5 @@ public interface IProxmoxService
     /// <param name="param">Info for creating VMs</param>
     /// <returns>Boolean True = Available, False = Not</returns>
     public Task<bool> CheckCreationAbility(CreateVMsDTO param);
+    Task<bool> CheckCreationAbility(CreateVMsDTO param, out Dictionary<string, string> VMsAllocation);
 }

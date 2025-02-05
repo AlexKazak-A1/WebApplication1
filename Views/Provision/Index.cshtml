@@ -288,20 +288,87 @@
 
     async function createCluster() {
         try {
+
             const select = document.getElementById('select-rancher-template');
             const selectedValue = select.value;
+
             const name = document.getElementById('clusterName');
             const clusterName = name.value;
 
+            const selectProxmox = document.getElementById('select-proxmox-template');
+            const selectedProxmoxValue = selectProxmox.value;
+
+            const amountOfWorkers = document.getElementById('workerNumber');
+            const amount = amountOfWorkers.value;
+
+            const template = document.getElementById('select-vm-template');
+            const templateName = template.options[template.selectedIndex].text;
+
+            const etcdAndCPInput = document.getElementById('etcdAndCPNumber');
+            const etcdCPAmount = etcdAndCPInput.value;
+
+            const vmStartIndex = document.getElementById('vmStartIndex');
+            const startIndexValue = vmStartIndex.value;
+
+            //const vmPrefixInput = document.getElementById('vmPrefixInput');
+            //let vmPrefixValue = vmPrefixInput.value;
+
+            const workerCPU = document.getElementById('workerCPU');
+            const workerCPUValue = workerCPU.value;
+
+            const workerRAM = document.getElementById('workerRAM');
+            const workerRAMValue = workerRAM.value;
+
+            const workerHDD = document.getElementById('workerHDD');
+            const workerHDDValue = workerHDD.value;
+
+            let templateID = parseInt(template.value, 10);
+            let proxmoxId = parseInt(selectedProxmoxValue, 10);
+
+            let url = baseURL + 'api/Proxmox/GetTemplateParams';
+            const info ={
+                proxmoxid: proxmoxId,
+                templateid: templateID,
+            }
+
+
+            let result = await postToController(url, info);
+
+
+            const data = {
+                etcdAndControlPlaneAmount: etcdCPAmount,
+                workerAmount: amount,
+                proxmoxId: selectedProxmoxValue,
+                vmTemplateName: templateName,
+                rancherId: selectedValue,
+                clusterName: clusterName,
+                vmStartIndex: startIndexValue,
+                vmPrefix: clusterName,
+                vmConfig:
+                {
+                    cpu: workerCPUValue,
+                    ram: workerRAMValue,
+                    hdd: workerHDDValue
+                },
+                etcdConfig:
+                {
+                    cpu: result.value.cpu,
+                    ram: result.value.ram,
+                    hdd: result.value.hdd
+                }
+            }
+
+            let isCreationAvailable = await GetCreationAvailibility(data);      
+
             let isClasterCreated = false;
 
-            var url =baseURL +  'api/Provision/CreateClaster';
-            var data = {
+            url = baseURL +  'api/Provision/CreateClaster';
+            data = {
                 RancherId: selectedValue,
                 ClusterName: clusterName
             }
 
-            const result = await postToController(url, data)
+            result = await postToController(url, data)
                 .then(data => {
                     showNotification(data.value.status, data.value.message);
                     if (data.value.status === 200) {
@@ -315,49 +382,7 @@
                 showNotification(105, 'Test cluster creation started.\n Used only for Proxmox Provision test');
                 //await wait(5);
 
-                const selectProxmox = document.getElementById('select-proxmox-template');
-                const selectedProxmoxValue = selectProxmox.value;
-
-                const amountOfWorkers = document.getElementById('workerNumber');
-                const amount = amountOfWorkers.value;
-
-                const template = document.getElementById('select-vm-template');
-                const templateName = template.options[template.selectedIndex].text;
-
-                const etcdAndCPInput = document.getElementById('etcdAndCPNumber');
-                const etcdCPAmount = etcdAndCPInput.value;
-
-                const vmStartIndex = document.getElementById('vmStartIndex');
-                const startIndexValue = vmStartIndex.value;
-
-                //const vmPrefixInput = document.getElementById('vmPrefixInput');
-                //let vmPrefixValue = vmPrefixInput.value;
-
-                const workerCPU = document.getElementById('workerCPU');
-                const workerCPUValue = workerCPU.value;
-
-                const workerRAM = document.getElementById('workerRAM');
-                const workerRAMValue = workerRAM.value;
-
-                const workerHDD = document.getElementById('workerHDD');
-                const workerHDDValue = workerHDD.value;
-
-                const data = {
-                    etcdAndControlPlaneAmount: etcdCPAmount,
-                    workerAmount: amount,
-                    proxmoxId: selectedProxmoxValue,
-                    vmTemplateName: templateName,
-                    rancherId: selectedValue,
-                    clusterName: clusterName,
-                    vmStartIndex: startIndexValue,
-                    vmPrefix: clusterName,
-                    vmConfig: 
-                    {
-                        cpu: workerCPUValue,
-                        ram: workerRAMValue,
-                        hdd: workerHDDValue
-                    }
-                }
+                
 
                 const clusterInfo = {
                     rancherId: selectedValue,
@@ -366,7 +391,7 @@
 
                 const connString = await GetConnectionStringToRancher(clusterInfo);
 
-                let isCreationAvailable = await GetCreationAvailibility(data);
+                
 
                 let vmIDs = await startCreatingProxmoxVMs(data);  //   <--  Remove comment to start proxmox privision
 
@@ -459,21 +484,6 @@
                 }
                 return result; // Return array of vmIDs
             });
-
-        //let vmsId = await postToController(url, data)
-        //    .then(data => {
-        //        // Extract the array from the "value" property
-        //        if (data && Array.isArray(data.value)) {
-        //            data.value.forEach(item => {
-        //                if (item.status === 200) {
-        //                    showNotification(item.status, 'Successfuly created VM: ' + item.message);
-        //                }
-        //                else {
-        //                    showNotification(item.status, item.message);
-        //                }
-        //            });
-        //        }
-        //    });
 
         return vmIDs;
     }
