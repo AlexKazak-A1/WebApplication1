@@ -20,13 +20,20 @@ public interface IProxmoxService
 
     public Task<JsonResult> GetTemplateParams([FromBody] TemplateIdDTO data);
 
-    public Task<JsonResult> CreateNewProxmoxCred([FromBody] ProxmoxModel model);
+    Task<JsonResult> CreateNewProxmoxCred([FromBody] ProxmoxModel model);
 
     /// <summary>
     /// Checks an ability to create all vms according to oversubscription
     /// </summary>
     /// <param name="param">Info for creating VMs</param>
     /// <returns>Boolean True = Available, False = Not</returns>
-    public Task<bool> CheckCreationAbility(CreateVMsDTO param);
-    Task<bool> CheckCreationAbility(CreateVMsDTO param, out Dictionary<string, string> VMsAllocation);
+    /// <out>Dictionary that specify VMs Allocation</out>
+    public Task<Dictionary<string, List<string>>?> CheckCreationAbility(CreateVMsDTO param);
+
+    /// <summary>
+    /// Gets the list of all available storages in proxmox cluster
+    /// </summary>
+    /// <param name="proxmoxId"> Id of Proxmox Cluster from DB.</param>
+    /// <returns></returns>
+    public Task<List<ProxmoxResourcesDTO>> GetProxmoxStoragesAsync(int proxmoxId);
 }

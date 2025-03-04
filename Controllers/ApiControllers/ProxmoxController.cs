@@ -12,6 +12,7 @@ using WebApplication1.Data.Enums;
 using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.Services;
 using WebApplication1.Data.WEB;
+using Microsoft.AspNetCore.Http.Metadata;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
@@ -68,6 +69,34 @@ public class ProxmoxController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(CreateNewProxmoxCred)} in {nameof(ProxmoxController)}" }));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GetProxmoxHosts([FromBody] ProxmoxIdDTO data)
+    {
+        try
+        {
+            var result = (await _proxmoxService.GetProxmoxNodesListAsync(data.ProxmoxId)).Where( x => x.Status == "online").Select(x => x.Node).ToList().OrderBy(x => x);
+            return Ok( new JsonResult(result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetProxmoxHosts)} in {nameof(ProxmoxController)}" }));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GetProxmoxStorages([FromBody] ProxmoxIdDTO data)
+    {
+        try
+        {
+            var result = (await _proxmoxService.GetProxmoxStoragesAsync(data.ProxmoxId)).Select(x => x.Storage).Distinct().OrderBy(x => x);
+            return Ok(new JsonResult(result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetProxmoxHosts)} in {nameof(ProxmoxController)}" }));
         }
     }
 }

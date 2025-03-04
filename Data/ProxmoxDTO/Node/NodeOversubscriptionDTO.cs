@@ -10,7 +10,7 @@ public class NodeOversubscriptionDTO
     {
         get
         {
-            return (double)this.TotalAllocatedCPUs / (double)TotalNodeCPU;
+            return (double)this.TotalAllocatedCPUs / 2 / (double)TotalNodeCPU;
         }
     }
 }

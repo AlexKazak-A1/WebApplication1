@@ -33,4 +33,16 @@ public class CreateVMsDTO
 
     [JsonProperty("etcdConfig")]
     public TemplateParams etcdConfig { get; set; }
+
+    [JsonProperty("provisionSchema")]
+    public Dictionary<string,List<string>>? ProvisionSchema { get; set; }
+
+    [JsonProperty("etcdProvisionRange")]
+    public List<string> ETCDProvisionRange { get; set; }
+
+    [JsonProperty("workerProvisionRange")]
+    public List<string> WorkerProvisionRange { get; set; }
+
+    [JsonProperty("selectedStorage")]
+    public List<string> SelectedStorage { get; set; }
 }

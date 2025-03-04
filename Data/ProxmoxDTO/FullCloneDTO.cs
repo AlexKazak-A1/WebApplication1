@@ -34,4 +34,10 @@ public class FullCloneDTO
     /// </summary>
     [JsonProperty("full")]
     public bool Full { get; set; }
+
+    /// <summary>
+    /// Determine vm storage allocation
+    /// </summary>
+    [JsonProperty("storage")]
+    public string Storage { get; set; }
 }

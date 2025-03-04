@@ -133,6 +133,73 @@ async function getTemplates(url, selectTemplate, payload) {
     });    
 }
 
+async function CreateProvisionBlock(baseURL, data) {
+    // Arrays containing data for checkboxes
+    
+    const proxmoxHostItems = await GetProxmoxHosts(baseURL, data);//['Option 1', 'Option 2', 'Option 3'];
+    const proxmoxStorageItems = await GetProxmoxStorages(baseURL, data); //['Option 1', 'Option 2', 'Option 3'];
+
+    function createCheckboxBlock(items, blockId) {
+        const block = document.createElement('div');
+        block.id = blockId;
+        const heading = document.createElement('h2');
+        if (blockId === 'master') {
+            heading.textContent = 'ETCDs Provision';
+        }
+        else if (blockId === 'worker') {
+            heading.textContent = 'Worker Provision';
+        }
+        else {
+            heading.textContent = 'VM Storage Allocation';
+        }
+        
+        block.appendChild(heading);
+
+        items.forEach(item => {
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = blockId;
+            checkbox.value = item;
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(item));
+            block.appendChild(label);
+            block.appendChild(document.createElement('br'));
+        });
+
+        return block;
+    }
+
+    // Adding the blocks to the page
+    const container = document.getElementById('vmProvisionRange');
+    container.innerHTML = '';
+    container.appendChild(createCheckboxBlock(proxmoxHostItems, 'master'));
+    container.appendChild(createCheckboxBlock(proxmoxHostItems, 'worker'));
+    container.appendChild(createCheckboxBlock(proxmoxStorageItems, 'storage'));
+}
+
+// Function to get selected checkboxes
+function GetSelectedCheckboxes(boxid) {
+    const checkboxes = document.querySelectorAll('#' + boxid + ' input[type="checkbox"]:checked');
+    const selectedValues = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+    return selectedValues;
+}
+
+async function GetProxmoxHosts(baseURL, data) {
+    let hostURL = baseURL + 'api/Proxmox/GetProxmoxHosts';
+    let proxmoxhosts = await postToController(hostURL, data);
+
+    return proxmoxhosts.value;
+}
+
+async function GetProxmoxStorages(baseURL, data) {
+    let hostURl = baseURL + 'api/Proxmox/GetProxmoxStorages'
+    let proxmoxStorages = await postToController(hostURl, data);
+
+    return proxmoxStorages.value;
+}
+
 async function wait(seconds) {
     return new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }

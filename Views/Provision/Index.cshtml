@@ -7,7 +7,7 @@
 
 @model ProvisionModel
 
-<div>
+<div id="cluster-block">
     <h2>Create new Rancher Cluster</h2>
     <br />
     <div>
@@ -47,12 +47,9 @@
                 <label for="vmStartIndex">VM`s Start index</label>
                 <input type="number" id="vmStartIndex" name="vmStartIndex" placeholder="100" min="100" max="999999999" />
             </div>
-            <!--
-            <div class="column">
-                <label for="vmPrefixInput">VM`s Name Prefix</label>
-                <input type="text" id="vmPrefixInput" name="vmPrefixInput" placeholder="rke2-" />
-            </div>
-            -->
+        </div>
+        <div class="container" id="vmProvisionRange">
+
         </div>
     </form>
     <form>
@@ -64,11 +61,9 @@
             
         </div>
     </form>
-    <br/>
     <div>
         <label for="clusterName">Cluster Name:</label>
         <input type="text" id="clusterName" required />
-        <br/>
         <button type="button" id="createRancherClusterButtonTest" onclick="createCluster()" disabled>Create Cluster Test</button>
     </div>
 
@@ -169,6 +164,7 @@
                 let data = {
                     proxmoxId: number,
                 }
+                await CreateProvisionBlock(baseURL, data);
                 // Call your function here
                 getTemplates(baseURL + 'api/Proxmox/GetTemplate', 'select-vm-template', data);
             }
@@ -334,8 +330,11 @@
 
             let result = await postToController(url, info);
 
+            let hostsEtcd = GetSelectedCheckboxes('master');
+            let hostsWorker = GetSelectedCheckboxes('worker');
+            let storages = GetSelectedCheckboxes('storage');
 
-            const data = {
+            let data = {
                 etcdAndControlPlaneAmount: etcdCPAmount,
                 workerAmount: amount,
                 proxmoxId: selectedProxmoxValue,
@@ -355,20 +354,31 @@
                     cpu: result.value.cpu,
                     ram: result.value.ram,
                     hdd: result.value.hdd
-                }
+                },
+                etcdProvisionRange: hostsEtcd,
+                workerProvisionRange: hostsWorker,
+                selectedStorage: storages,
+                provisionSchema: {}
             }
 
             let isCreationAvailable = await GetCreationAvailibility(data);      
+            
+            if (!isCreationAvailable.status)
+            {
+                return;
+            }
+
+            let provisioningSchema = isCreationAvailable.data;
 
             let isClasterCreated = false;
 
             url = baseURL +  'api/Provision/CreateClaster';
-            data = {
+            let clusterInfo = {
                 RancherId: selectedValue,
                 ClusterName: clusterName
             }
 
-            result = await postToController(url, data)
+            result = await postToController(url, clusterInfo)
                 .then(data => {
                     showNotification(data.value.status, data.value.message);
                     if (data.value.status === 200) {
@@ -379,7 +389,7 @@
 
             if ((result.value.status === 200 && isClasterCreated) || result.value.status === 409) {   //  (true) {
 
-                showNotification(105, 'Test cluster creation started.\n Used only for Proxmox Provision test');
+                //showNotification(105, 'Test cluster creation started.\n Used only for Proxmox Provision test');
                 //await wait(5);
 
                 
@@ -392,7 +402,7 @@
                 const connString = await GetConnectionStringToRancher(clusterInfo);
 
                 
-
+                data.provisionSchema = provisioningSchema;
                 let vmIDs = await startCreatingProxmoxVMs(data);  //   <--  Remove comment to start proxmox privision
 
                 //if (connString !== '' && vmIDs.length > 0) {
@@ -415,8 +425,20 @@
         const url = baseURL + 'api/Provision/GetCreationAvailibility';
 
         let res = await postToController(url, data)
-            .then(result => {                
-                return result.value;
+            .then(result => {    
+                if (result.value.status == 200) {
+                    showNotification(result.value.status, result.value.message);
+                    return info = {
+                        status: true,
+                        data: result.value.data
+                    };
+                }
+                else {
+                    showNotification(result.value.status, result.value.message);
+                }
+                return info = {
+                        status: false                        
+                    };
             });
 
             return res;
@@ -439,10 +461,38 @@
         }
 
         let res = await postToController(url, data)
-            .then(result => {
-                showNotification(result.value.status, result.value.message);
-                return result.value;
+            .then(data => {
+               let result = [];
+
+                // Проверка на существование данных и массива в свойстве "value"
+                if (data && Array.isArray(data.value)) {
+                    data.value.forEach(item => {
+                        if (item.status === 200) {
+                            showNotification(item.status, 'Successfuly added to Rancher VMId =' + item.message);
+                            // Добавляем числовое значение из item.message в массив
+                            let num = parseInt(item.message, 10);
+                            if (!isNaN(num)) {
+                                result.push(num);
+                            }
+                        }
+                        else if (item.status === 409) {
+                            showNotification(item.status, 'Already exist VM: ' + item.message);
+                            // Добавляем числовое значение из item.message в массив
+                            let num = parseInt(item.message, 10);
+                            if (!isNaN(num)) {
+                                result.push(num);
+                            }
+                        }
+                        else {
+                            showNotification(item.status, 'Check vmId = ' + item.message);
+                        }
+
+                    });
+                }
+                return result;
             });
+
+        return res;
     }
 
     async function startCreatingProxmoxVMs(data) {
@@ -502,4 +552,6 @@
 
         return result;
     }
+
+    
 </script>

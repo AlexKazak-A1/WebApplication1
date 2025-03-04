@@ -24,6 +24,14 @@
             </summary>
             <param name="param">Info for creating VMs</param>
             <returns>Boolean True = Available, False = Not</returns>
+            <out>Dictionary that specify VMs Allocation</out>
+        </member>
+        <member name="M:WebApplication1.Data.Interfaces.IProxmoxService.GetProxmoxStoragesAsync(System.Int32)">
+            <summary>
+            Gets the list of all available storages in proxmox cluster
+            </summary>
+            <param name="proxmoxId"> Id of Proxmox Cluster from DB.</param>
+            <returns></returns>
         </member>
         <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.NewId">
             <summary>
@@ -49,6 +57,11 @@
             <summary>
             Create a full copy of all disks.
             Better to enable for new VM`s
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.Storage">
+            <summary>
+            Determine vm storage allocation
             </summary>
         </member>
         <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Id">
@@ -131,9 +144,18 @@
             Checks an ability to create all vms according to oversubscription
             </summary>
             <param name="param">Info for creating VMs</param>
+            <param name="VMsAllocation"></param>
             <returns>Boolean True = Available, False = Not</returns>
         </member>
-        <member name="M:WebApplication1.Data.Services.ProxmoxService.CreateVmOfType(WebApplication1.Data.Enums.ClusterElemrntType,WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
+        <member name="M:WebApplication1.Data.Services.ProxmoxService.GetProxmoxStoragesAsync(System.Int32)">
+            <summary>
+            Returns list of avalable storages in proxmox cluster
+            </summary>
+            <param name="proxmoxId"></param>
+            <returns></returns>
+            <exception cref="T:System.Exception">Check this Method</exception>
+        </member>
+        <member name="M:WebApplication1.Data.Services.ProxmoxService.CreateVmOfType(WebApplication1.Data.ProxmoxDTO.CreateVMsDTO,WebApplication1.Data.Enums.ClusterElemrntType)">
             <summary>
             Create VM of specified type. Must be used after CheckAllParamsAsync()
             </summary>

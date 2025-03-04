@@ -20,10 +20,10 @@ public class Program
 
         // Add DBContext to conect to DB.
         builder.Services.AddDbContext<MainDBContext>(options => 
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient, ServiceLifetime.Transient);
 
         //Add DBWorker for DB proccess
-        builder.Services.AddScoped<IDBService, DBWorker>();
+        builder.Services.AddTransient<IDBService, DBWorker>();
 
         //Add services for proxmox and rancher
         builder.Services.AddScoped<IProxmoxService, ProxmoxService>();
