@@ -1,21 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
-using System.Xml.Linq;
-using System.Configuration;
 using WebApplication1.Data.Enums;
 using WebApplication1.Data.Interfaces;
 using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.WEB;
 using WebApplication1.Models;
 using WebApplication1.Data.ProxmoxDTO.Node;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-using System.Linq;
+
 
 namespace WebApplication1.Data.Services;
 
@@ -45,7 +39,8 @@ public class ProxmoxService : IProxmoxService
             return new Dictionary<int, bool>();
         }
 
-        var currentProxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
 
         if (currentProxmox == null)
         {
@@ -109,7 +104,8 @@ public class ProxmoxService : IProxmoxService
     {
         var nodesList = new List<ProxmoxNodeInfoDTO>();
 
-        var proxmoxConn = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var proxmoxConn = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
         if (proxmoxConn == null)
         {
             return nodesList;
@@ -134,7 +130,8 @@ public class ProxmoxService : IProxmoxService
     {
         var templates = new Dictionary<int, string>();
 
-        var proxmoxConn = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var proxmoxConn = proxmoxes.Where(x => x.Id == proxmoxId).FirstOrDefault();
 
         if (nodesName == null && nodesName.Count == 0 && proxmoxConn == null)
         {
@@ -174,39 +171,40 @@ public class ProxmoxService : IProxmoxService
             return new Dictionary<int, bool>();
         }
 
-        var currentProxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
 
         if (currentProxmox == null)
         {
             return new Dictionary<int, bool>();
         }
 
-        //var res = new Dictionary<int, bool>();
-        //foreach (var vm in vmsRunningState)
-        //{
-        //   res.Add(vm.Key, await GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
-        //}
-        //if (res.Count > 0)
-        //{           
-        //    return res;
-        //}
-
-        var res = new Dictionary<int, Task<bool>>();
+        var res = new Dictionary<int, bool>();
         foreach (var vm in vmsRunningState)
         {
-            res.Add(vm.Key, GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
+            res.Add(vm.Key, await GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
         }
-
-        Task.WaitAll(res.Values.ToArray());
         if (res.Count > 0)
         {
-            var result = new Dictionary<int, bool>();
-            foreach (var vm in res)
-            {
-                result.Add(vm.Key, await vm.Value);
-            }
-            return result;
+            return res;
         }
+
+        //var res = new Dictionary<int, Task<bool>>();
+        //foreach (var vm in vmsRunningState)
+        //{
+        //    res.Add(vm.Key, GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
+        //}
+
+        //Task.WaitAll(res.Values.ToArray());
+        //if (res.Count > 0)
+        //{
+        //    var result = new Dictionary<int, bool>();
+        //    foreach (var vm in res)
+        //    {
+        //        result.Add(vm.Key, await vm.Value);
+        //    }
+        //    return result;
+        //}
 
         return new Dictionary<int, bool>();
     }
@@ -337,7 +335,8 @@ public class ProxmoxService : IProxmoxService
                 return null;
             }
 
-            var currentProxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == param.ProxmoxId).FirstOrDefault();
+            var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+            var currentProxmox = proxmoxes?.Where(x => x.Id == param.ProxmoxId).FirstOrDefault();
 
             if (currentProxmox == null)
             {
@@ -440,7 +439,8 @@ public class ProxmoxService : IProxmoxService
     {
         try
         {
-            var currentProxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
+            var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+            var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
 
             if (currentProxmox == null)
             {
@@ -578,14 +578,16 @@ public class ProxmoxService : IProxmoxService
             return false;
         }
 
-        var proxmoxCred = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == vmInfo.ProxmoxId).FirstOrDefault();
+        var proxmox = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var proxmoxCred = proxmox?.Where(x => x.Id == vmInfo.ProxmoxId).FirstOrDefault();
 
         if (proxmoxCred == null)
         {
             return false;
         }
 
-        var nodesList = (await GetProxmoxNodesListAsync(vmInfo.ProxmoxId) as List<ProxmoxNodeInfoDTO>).Select(x => x.Node).ToList();
+        var nodeSource = await GetProxmoxNodesListAsync(vmInfo.ProxmoxId);
+        var nodesList = nodeSource.Select(x => x.Node).ToList();
 
         if (nodesList == null)
         {
@@ -603,6 +605,7 @@ public class ProxmoxService : IProxmoxService
         {
             var counter = 0;
             var newIdIndex = data.NewId;
+            var tasks = new List<Task>();
             foreach (var vmProvition in vmInfo.ProvisionSchema)
             {
                 var currentNodeVMs = await GetAllVMsIdAndName(proxmoxURL: proxmoxCred.ProxmoxURL, nodeName: vmProvition.Key, accessToken: proxmoxCred.ProxmoxToken);
@@ -613,23 +616,25 @@ public class ProxmoxService : IProxmoxService
                     data.NewId = newIdIndex + counter++;
                     data.Node = vmProvition.Key;
                     data.VMId = currentTemplateId;
-                    data.Storage = await SelectMaxStorageSize(vmInfo.SelectedStorage, vmInfo.ProxmoxId); 
+                    data.Storage = await SelectMaxStorageSize(vmInfo.SelectedStorage, vmInfo.ProxmoxId);
                     currentTemplateNode = vmProvition.Key;
                     var payload = JsonConvert.SerializeObject(data);
 
-                    
 
-                    //Task.Run(async () => 
-                    //{
-                    //    vmList.Add(await CreateVM(proxmoxCred.ProxmoxURL, currentTemplateNode, proxmoxCred.ProxmoxToken, currentTemplateId, payload));
-
-                    //    await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.etcdConfig);
-                    //});
                     vmList.Add(await CreateVM(proxmoxCred.ProxmoxURL, currentTemplateNode, proxmoxCred.ProxmoxToken, currentTemplateId, payload));
 
-                    await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.etcdConfig);
+                    if (data.Name.Contains(MASTER))
+                    {
+                        await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.etcdConfig);
+                    }
+                    else
+                    {
+                        await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.VMConfig);
+                    }
                 }
             }
+
+            Task.WaitAll(tasks.ToArray());
 
             return vmList;
 
@@ -909,8 +914,9 @@ public class ProxmoxService : IProxmoxService
 
     private async Task<VmInfoDTO> GetVmInfoAsync(int proxmoxId, int templateId)
     {
-        var nodesList = await GetProxmoxNodesListAsync(proxmoxId) as List<ProxmoxNodeInfoDTO>;
-        var proxmoxConn = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var nodesList = await GetProxmoxNodesListAsync(proxmoxId);
+        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var proxmoxConn = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
 
         foreach (var node in nodesList.Select(x => x.Node))
         {
@@ -1019,7 +1025,8 @@ public class ProxmoxService : IProxmoxService
     {
         try
         {
-            var nodeList = (await GetProxmoxNodesListAsync(proxmoxId)).Select(x => x.Node);
+            var nodes = await GetProxmoxNodesListAsync(proxmoxId);
+            var nodeList = nodes.Select(x => x.Node);
             string node = await GetNodeName(proxmoxId, vmId);
 
             var url = currentProxmox.ProxmoxURL + $"/api2/json/nodes/{node}/qemu/{vmId}/agent/exec-status?pid={pid}";
@@ -1073,8 +1080,10 @@ public class ProxmoxService : IProxmoxService
 
     private async Task<string> GetNodeName(int proxmoxId, int vmId)
     {
-        var nodeList = (await GetProxmoxNodesListAsync(proxmoxId)).Select(x => x.Node);
-        var currentProxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var nodes = await GetProxmoxNodesListAsync(proxmoxId);
+        var nodeList = nodes.Select(x => x.Node);
+        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
 
         foreach (var item in nodeList)
         {
@@ -1106,7 +1115,7 @@ public class ProxmoxService : IProxmoxService
         {
             var info = await GetVmInfoAsync(proxmoxId, vmId);
             var cpu = int.Parse(vmConfig.CPU);
-            var templateParam = double.Parse(vmConfig.HDD);
+            var templateParam = double.Parse(vmConfig.HDD.Replace(',', '.'), CultureInfo.InvariantCulture);
             var currHDDSize = double.Round(FormatBytes(info.MaxDisk), 1);
 
             if (info.CPUS != cpu || currHDDSize != templateParam)
@@ -1120,9 +1129,9 @@ public class ProxmoxService : IProxmoxService
 
 
                 // Setting New Vm Disk size
-                var incrementSize = double.Parse(vmConfig.HDD) - double.Round( FormatBytes(info.MaxDisk), 1);
+                var incrementSize = double.Parse(vmConfig.HDD.Replace(',', '.'), CultureInfo.InvariantCulture) - double.Round( FormatBytes(info.MaxDisk), 1);
                 
-                if (incrementSize == 0)
+                if (incrementSize < 1)
                 {
                     return;
                 }
@@ -1187,7 +1196,7 @@ public class ProxmoxService : IProxmoxService
             clusterInfo.VMConfig.RAM = _configuration["RAMMin"] ?? "4";
         }
 
-        if (workerRAM < minRAM)
+        if (etcdRAM < minRAM)
         {
             clusterInfo.etcdConfig.RAM = _configuration["RAMMin"] ?? "4";
         }

@@ -7,6 +7,7 @@ public class MainDBContext : DbContext
 {
     public MainDBContext(DbContextOptions<MainDBContext> options) : base(options)
     {
+        Database.EnsureCreatedAsync();
     }
 
     public DbSet<ProxmoxModel> Proxmox { get; set; }

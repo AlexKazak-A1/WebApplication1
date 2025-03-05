@@ -3,7 +3,16 @@
 
 // Write your JavaScript code.
 // Shows notification
-const baseURL = 'https://localhost:7001/';
+let localUrl = window.location.href;
+
+// Find the index of the third '/' (after protocol and domain)
+let parts = localUrl.split('/');
+let baseURL = '';
+if (parts.length > 3) {
+    // Rebuild the URL while removing everything between the third '/' and 'api'
+    baseURL = parts[0] + '//' + parts[2] + '/';
+}
+
 
 function showNotification(status, message) {
 

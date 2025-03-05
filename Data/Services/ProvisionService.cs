@@ -159,7 +159,7 @@ public class ProvisionService : IProvisionService
                else
                {
                     result.Add(new Response { Status = Status.WARNING, Message = vmStatus.Key.ToString() });
-                }
+               }
             }
 
             return new JsonResult(result);

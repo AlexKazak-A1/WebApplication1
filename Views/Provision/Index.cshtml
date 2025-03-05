@@ -200,7 +200,7 @@
                     </div>
                     <div class="column">
                         <label for="workerRAM">RAM:</label>
-                        <input type="number" id="workerRAM" name="workerRAM" step="0.5"/>
+                        <input type="number" id="workerRAM" name="workerRAM" step="1"/>
                         <label for="workerRAM"> GB</label>
                     </div>
                     <div class="column">
@@ -276,6 +276,7 @@
             Rancher: 0,
             Proxmox: 1
         };
+        
         // getTemplates('/Proxmox/GetTemplate', 'select-template','');
         await getTemplates(baseURL + 'api/Provision/GetConnectionCreds', 'select-rancher-template', {connectiontype: ConnectionType.Rancher});
         await getTemplates(baseURL + 'api/Provision/GetConnectionCreds', 'select-proxmox-template', {connectiontype: ConnectionType.Proxmox});
