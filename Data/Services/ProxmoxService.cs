@@ -45,44 +45,46 @@ public class ProxmoxService : IProxmoxService
     /// <returns></returns>
     public async Task<Dictionary<int, bool>> StartVmsAsync(List<int> vmIds, int proxmoxId)
     {
-        if (vmIds.Count == 0)
-        {
-            return new Dictionary<int, bool>();
-        }
+        if (!vmIds.Any()) return new Dictionary<int, bool>();
 
         var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
-        var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var currentProxmox = proxmoxes?.FirstOrDefault(x => x.Id == proxmoxId);
 
-        if (currentProxmox == null)
+        if (currentProxmox == null) return new Dictionary<int, bool>();
+
+        var nodeList = (await GetProxmoxNodesListAsync(proxmoxId))
+                        .Select(x => x.Node)
+                        .ToList();
+
+        var vmNodeMap = new Dictionary<int, string>();
+
+        // Загружаем все ВМ для всех узлов одним вызовом в параллели
+        var vmTasks = nodeList.Select(async node => new
         {
-            return new Dictionary<int, bool>();
-        }
+            Node = node,
+            Vms = await GetAllVMsIdAndName(currentProxmox.ProxmoxURL, node, currentProxmox.ProxmoxToken)
+        }).ToList();
 
-        var nodeList = (await GetProxmoxNodesListAsync(proxmoxId) as List<ProxmoxNodeInfoDTO>).Select(x => x.Node).ToList();
+        var vmResults = await Task.WhenAll(vmTasks);
 
-        string currentTemplateNode = string.Empty;
-        var resultVMsState = new Dictionary<int, bool>();
-
-       
-        for (int i = 0; i < vmIds.Count; i++)
+        foreach (var result in vmResults)
         {
-            for (int j = 0; j < nodeList.Count; j++)
+            foreach (var vmId in vmIds)
             {
-                var vmsOfNode = await GetAllVMsIdAndName(proxmoxURL: currentProxmox.ProxmoxURL, nodeName: nodeList[j], accessToken: currentProxmox.ProxmoxToken);
-                if (vmsOfNode.Keys.Contains(vmIds[i]))
+                if (result.Vms.ContainsKey(vmId))
                 {
-                    currentTemplateNode = nodeList[j];
-                    break;
+                    vmNodeMap[vmId] = result.Node;
                 }
             }
-            var state = await StartVm(currentProxmox, vmIds[i], currentTemplateNode);
-            resultVMsState.Add(vmIds[i], state);
         }
-        
-        
 
-        return resultVMsState;
+        var startTasks = vmNodeMap.Select(kv => StartVm(currentProxmox, kv.Key, kv.Value));
+        var results = await Task.WhenAll(startTasks);
+
+        return vmNodeMap.Keys.Zip(results, (id, status) => new { id, status })
+                             .ToDictionary(x => x.id, x => x.status);
     }
+
 
     public async Task<object> StartProvisioningVMsAsync(CreateVMsDTO vmInfo)
     {
@@ -137,87 +139,90 @@ public class ProxmoxService : IProxmoxService
         return nodesList;
     }
 
-    public async Task<object> GetAllNodesTemplatesIds(List<string> nodesName, int proxmoxId)
+    //public async Task<object> GetAllNodesTemplatesIds(List<string> nodesName, int proxmoxId)
+    //{
+    //    var templates = new Dictionary<int, string>();
+
+    //    var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+    //    var proxmoxConn = proxmoxes.Where(x => x.Id == proxmoxId).FirstOrDefault();
+
+    //    if (nodesName == null && nodesName.Count == 0 && proxmoxConn == null)
+    //    {
+    //        return templates;
+    //    }
+
+    //    foreach (var node in nodesName)
+    //    {
+    //        var response = await SendRequestToProxmoxAsync($"{proxmoxConn.ProxmoxURL}/api2/json/nodes/{node}/qemu", HttpMethod.Get, proxmoxConn.ProxmoxToken);
+
+    //        if (response != null && response.Data is JArray jArray)
+    //        {
+    //            var qemuList = jArray.ToObject<List<ProxmoxQemuDTO>>();
+
+    //            if (qemuList == null)
+    //            {
+    //                return templates;
+    //            }
+
+    //            foreach (var qemu in qemuList)
+    //            {
+    //                if (qemu.Template && !templates.ContainsValue(qemu.Name))
+    //                {                        
+    //                    templates.Add(qemu.VmId, $"{qemu.Name}");
+    //                }
+    //            }
+    //        }
+    //    }
+
+    //    return templates;
+    //}
+
+    public async Task<Dictionary<int, string>> GetAllNodesTemplatesIds(List<string> nodesName, int proxmoxId)
     {
-        var templates = new Dictionary<int, string>();
+        if (nodesName == null || !nodesName.Any()) return new Dictionary<int, string>();
 
         var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
-        var proxmoxConn = proxmoxes.Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var proxmoxConn = proxmoxes?.FirstOrDefault(x => x.Id == proxmoxId);
 
-        if (nodesName == null && nodesName.Count == 0 && proxmoxConn == null)
-        {
-            return templates;
-        }
+        if (proxmoxConn == null) return new Dictionary<int, string>();
 
-        foreach (var node in nodesName)
+        var tasks = nodesName.Select(async node =>
         {
             var response = await SendRequestToProxmoxAsync($"{proxmoxConn.ProxmoxURL}/api2/json/nodes/{node}/qemu", HttpMethod.Get, proxmoxConn.ProxmoxToken);
 
-            if (response != null && response.Data is JArray jArray)
-            {
-                var qemuList = jArray.ToObject<List<ProxmoxQemuDTO>>();
+            if (response?.Data is not JArray jArray) return new List<(int, string)>();
 
-                if (qemuList == null)
-                {
-                    return templates;
-                }
+            return jArray.ToObject<List<ProxmoxQemuDTO>>()?
+                .Where(q => q.Template)
+                .Select(q => (q.VmId, q.Name))
+                .ToList() ?? new List<(int, string)>();
+        });
 
-                foreach (var qemu in qemuList)
-                {
-                    if (qemu.Template && !templates.ContainsValue(qemu.Name))
-                    {                        
-                        templates.Add(qemu.VmId, $"{qemu.Name}");
-                    }
-                }
-            }
-        }
+        var results = await Task.WhenAll(tasks);
 
-        return templates;
+        return results.SelectMany(x => x)
+                      .GroupBy(q => q.Item2)
+                      .Select(g => g.First()) // Убираем дубликаты
+                      .ToDictionary(q => q.Item1, q => q.Item2);
     }
+
 
     public async Task<Dictionary<int, bool>> WaitReadyStatusAsync(Dictionary<int, bool> vmsRunningState, int proxmoxId, string connectionString)
     {
-        if (vmsRunningState == null || vmsRunningState.Count == 0)
-        {
-            return new Dictionary<int, bool>();
-        }
+        if (vmsRunningState == null || vmsRunningState.Count == 0) return new Dictionary<int, bool>();
 
         var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
-        var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
+        var currentProxmox = proxmoxes?.FirstOrDefault(x => x.Id == proxmoxId);
+        if (currentProxmox == null) return new Dictionary<int, bool>();
 
-        if (currentProxmox == null)
+        var tasks = vmsRunningState.Select(async vm => new
         {
-            return new Dictionary<int, bool>();
-        }
+            VmId = vm.Key,
+            IsReady = await GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString)
+        });
 
-        var res = new Dictionary<int, bool>();
-        foreach (var vm in vmsRunningState)
-        {
-            res.Add(vm.Key, await GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
-        }
-        if (res.Count > 0)
-        {
-            return res;
-        }
-
-        //var res = new Dictionary<int, Task<bool>>();
-        //foreach (var vm in vmsRunningState)
-        //{
-        //    res.Add(vm.Key, GetReadyStateOfVM(proxmoxId, vm.Key, currentProxmox, connectionString));
-        //}
-
-        //Task.WaitAll(res.Values.ToArray());
-        //if (res.Count > 0)
-        //{
-        //    var result = new Dictionary<int, bool>();
-        //    foreach (var vm in res)
-        //    {
-        //        result.Add(vm.Key, await vm.Value);
-        //    }
-        //    return result;
-        //}
-
-        return new Dictionary<int, bool>();
+        var results = await Task.WhenAll(tasks);
+        return results.ToDictionary(x => x.VmId, x => x.IsReady);
     }
 
     public async Task<JsonResult> GetTemplate([FromBody] ProxmoxIdDTO data)
@@ -230,14 +235,14 @@ public class ProxmoxService : IProxmoxService
 
             var proxmoxId = data.ProxmoxId;
 
-            var nodesList = await GetProxmoxNodesListAsync(proxmoxId) as List<ProxmoxNodeInfoDTO>;
+            var nodesList = await GetProxmoxNodesListAsync(proxmoxId);
             nodesNameList.AddRange(nodesList.Select(x => x.Node));
             //var proxmoxConn = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == proxmoxId).FirstOrDefault();
             if (nodesList.Count > 0)
             {
                 var templates = await GetAllNodesTemplatesIds(nodesNameList, proxmoxId);
 
-                foreach (var template in templates as Dictionary<int, string>)
+                foreach (var template in templates)
                 {
                     options.Add(new SelectOptionDTO { Value = template.Key.ToString(), Text = template.Value });
                 }
@@ -612,7 +617,7 @@ public class ProxmoxService : IProxmoxService
         {
             var counter = 0;
             var newIdIndex = data.NewId;
-            var tasks = new List<Task>();
+
             foreach (var vmProvition in vmInfo.ProvisionSchema)
             {
                 var currentNodeVMs = await GetAllVMsIdAndName(proxmoxURL: proxmoxCred.ProxmoxURL, nodeName: vmProvition.Key, accessToken: proxmoxCred.ProxmoxToken);
@@ -641,67 +646,7 @@ public class ProxmoxService : IProxmoxService
                 }
             }
 
-            Task.WaitAll(tasks.ToArray());
-
             return vmList;
-
-            //switch (elemrntType)
-            //{
-            //    case ClusterElemrntType.ETCDAndControlPlane:
-            //        {
-            //            var selectedMasters = vmInfo.ProvisionSchema.Where(x => x.Value.Any(y => y.Contains(MASTER)));
-
-            //            foreach (var node in selectedMasters.Select((value, i) => (value , i)))
-            //            {
-            //                var name = vmInfo.ClusterName + '-' + node.value.Value.First(x => x.Contains(MASTER));
-            //                data.Name = name;
-            //                data.NewId += node.i;
-            //                data.Node = node.value.Key;
-            //                var payload = JsonConvert.SerializeObject(data);
-
-            //                // vmList.Add(await CreateVM(proxmoxCred.ProxmoxURL, currentTemplateNode, proxmoxCred.ProxmoxToken, currentTemplateId, payload));
-
-            //                // await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.etcdConfig);
-            //                continue;
-            //            }
-                       
-            //            return vmList;
-            //        }
-            //    case ClusterElemrntType.Worker:
-            //        {
-            //            var selectedWorkers= vmInfo.ProvisionSchema.Where(x => x.Value.Contains(WORKER));
-            //            int counter = vmInfo.ProvisionSchema.Count(x => x.Value.Contains(MASTER));
-            //            foreach (var node in selectedWorkers.Select((value, i) => (value, i)))
-            //            {
-            //                foreach (var vms in node.value.Value.Select((vm, i) => (vm, i)))
-            //                {
-            //                    data.Name += '-' + vms.vm;
-            //                    data.NewId += node.i + counter++;
-            //                    var payload = JsonConvert.SerializeObject(data);
-            //                }
-                            
-
-            //               // vmList.Add(await CreateVM(proxmoxCred.ProxmoxURL, currentTemplateNode, proxmoxCred.ProxmoxToken, currentTemplateId, payload));
-
-            //               // await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.etcdConfig);
-            //            }
-
-            //            for (var i = 0; i < vmInfo.WorkerAmount; i++)
-            //            {
-            //                data.Name += "-worker-" + i + 1;
-            //                data.NewId += vmInfo.EtcdAndControlPlaneAmount + i;
-            //                var payload = JsonConvert.SerializeObject(data);
-
-            //                vmList.Add(await CreateVM(proxmoxCred.ProxmoxURL, currentTemplateNode, proxmoxCred.ProxmoxToken, currentTemplateId, payload));
-
-            //                await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.VMConfig);
-            //            }
-
-            //            return vmList;
-            //        }
-            //    default:
-            //        return false;
-            //}
         }
         else
         {
@@ -895,6 +840,7 @@ public class ProxmoxService : IProxmoxService
             //"sudo dpkg --configure -a",
             "sudo apt install linux-generic nfs-common net-tools -y",
             "sudo reboot",
+            "ip a"
             
         };
 

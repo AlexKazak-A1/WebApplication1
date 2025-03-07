@@ -8,7 +8,7 @@ public interface IProxmoxService
 {
     public Task<List<ProxmoxNodeInfoDTO>> GetProxmoxNodesListAsync(int proxmoxId);
 
-    public Task<object> GetAllNodesTemplatesIds(List<string> nodesName, int proxmoxId);
+    public Task<Dictionary<int, string>> GetAllNodesTemplatesIds(List<string> nodesName, int proxmoxId);
 
     public Task<object> StartProvisioningVMsAsync(CreateVMsDTO vmInfo);
 

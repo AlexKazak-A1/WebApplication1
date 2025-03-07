@@ -19,8 +19,10 @@ public class Program
         builder.Configuration.AddEnvironmentVariables();
 
         // Add DBContext to conect to DB.
-        builder.Services.AddDbContext<MainDBContext>(options => 
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient, ServiceLifetime.Transient);      
+        builder.Services.AddDbContextFactory<MainDBContext>(options =>
+            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Scoped);
+        //builder.Services.AddDbContext<MainDBContext>(options => 
+        //    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient, ServiceLifetime.Transient);      
 
         //Add DBWorker for DB proccess
         builder.Services.AddTransient<IDBService, DBWorker>();
