@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using static WebApplication1.Models.ConnectionModel;
+using WebApplication1.Models;
 
 namespace WebApplication1.Data.Interfaces;
 

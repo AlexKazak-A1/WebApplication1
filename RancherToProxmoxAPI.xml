@@ -4,12 +4,131 @@
         <name>WebApplication1</name>
     </assembly>
     <members>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ConnectionController.CheckRancherUrl(WebApplication1.Models.UrlRancherCheckModel)">
+            <summary>
+            Method fo checking Rancher URL availability
+            </summary>
+            <param name="model">Represent UrlRancherCheckModel</param>
+            <returns>Returns the json object representing UrlCheckResponse { IsValid = bool, Message = string }</returns>
+            <response code="200">If such Rancher URL is accessible.</response>
+            <response code="500">If an exception is thrown.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ConnectionController.CheckProxmoxUrl(WebApplication1.Models.UrlProxmoxCheckModel)">
+            <summary>
+            Method fo checking Proxmox URL availability
+            </summary>
+            <param name="model">Represent UrlProxmoxCheckModel</param>
+            <returns>Returns the json object representing UrlCheckResponse { IsValid = bool, Message = string }</returns>
+            <response code="200">If such Proxmox URL is accessible.</response>
+            <response code="500">If an exception is thrown.</response>
+        </member>
         <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.GetConnectionCreds(WebApplication1.Data.WEB.ConnectionTypeDTO)">
             <summary>
-            Search all connections of specified type in backend
+            Search all connections of specified type in DB
             </summary>
             <param name="connectionTarget">Concret type on ConnectionType enum. Rancher = 0, Proxmox = 1</param>
-            <returns>Returns Json that contains List of creds on type</returns>
+            <returns>Returns Json that contains List of creds of specified type</returns>
+            <response code="200">If Creds available.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.CreateClaster(WebApplication1.Data.RancherDTO.CreateClusterDTO)">
+            <summary>
+            Creates New Rancher Cluster
+            </summary>
+            <param name="data">Object of CreateClusterDTO</param>
+            <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+            <response code="200">If Rancher cluster was created correctly.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.CreateProxmoxVMs(WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
+            <summary>
+            Creates all number of VMs in Proxmox
+            </summary>
+            <param name="data">Object of CreateVMsDTO</param>
+            <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+            <response code="200">If VMs was created.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.GetConnectionStringToRancher(WebApplication1.Data.RancherDTO.CreateClusterDTO)">
+            <summary>
+            Gwts conncetion string for VMs to be able connect to Rancher cluster
+            </summary>
+            <param name="clusterInfo">Object of CreateClusterDTO</param>
+            <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+            <response code="200">If Rancher available.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.StartVMAndConnectToRancher(WebApplication1.Data.WEB.ConnectVmToRancherDTO)">
+            <summary>
+            Trys to start created Proxmox VMs and config them to work as RKE2 cluster.
+            </summary>
+            <param name="data">Object of ConnectVmToRancherDTO</param>
+            <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+            <response code="200">If VMs added corretly or with warnings.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.GetCreationAvailibility(WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
+            <summary>
+            Checks if it`s awailable to create specified set of VMs in selected Proxmox cluster
+            </summary>
+            <param name="info">Object of CreateVMsDTO</param>
+            <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+            <response code="200">If creation of VMs is available.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProxmoxController.GetTemplate(WebApplication1.Data.ProxmoxDTO.ProxmoxIdDTO)">
+            <summary>
+            Returns Json object with list of templates of selected Proxmox cluster.
+            </summary>
+            <param name="data">Model with id of proxmox from DB</param>
+            <returns>Returns Json object with SelectOptionDTO(Value = string, Text = string).</returns>
+            <response code="200">If DB is accecible. Selects all available data</response>
+            <response code="500">If an exception is thrown.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProxmoxController.GetTemplateParams(WebApplication1.Data.ProxmoxDTO.TemplateIdDTO)">
+            <summary>
+            Returns Json object with list of template params of selected template.
+            </summary>
+            <param name="data">Model with id of template of Proxmox host</param>
+            <returns>Returns Json object with TemplateParams(CPU = string, RAM = string, HDD = string).</returns>
+            <response code="200">If template is available.</response>
+            <response code="500">If an exception is thrown.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProxmoxController.CreateNewProxmoxCred(WebApplication1.Models.ProxmoxModel)">
+            <summary>
+            Creates credentials for Proxmox cluster/host access
+            </summary>
+            <param name="model">Represents ProxmoxModel</param>
+            <returns>Returns JSON object with Responce(Status = int, Message = string).</returns>
+            <response code="200">If creds was added correctly.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProxmoxController.GetProxmoxHosts(WebApplication1.Data.ProxmoxDTO.ProxmoxIdDTO)">
+            <summary>
+            Gets all currently available Proxmox hosts in Proxomox Cluster
+            </summary>
+            <param name="data">Model with id of proxmox from DB.</param>
+            <returns>List of Proxmox host names.</returns>
+            <response code="200">If Proxmox available.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProxmoxController.GetProxmoxStorages(WebApplication1.Data.ProxmoxDTO.ProxmoxIdDTO)">
+            <summary>
+            Gets JSON object with List of storages name.
+            </summary>
+            <param name="data">Model with id of proxmox from DB</param>
+            <returns>List of storages name for current Proxmox host</returns>
+            <response code="200">If Proxmox available.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.RancherController.CreateNewRancherCred(WebApplication1.Models.RancherModel)">
+            <summary>
+            Creates new Rancher connection creds in DB
+            </summary>
+            <param name="model">Model that represents main creds for Rancher connection</param>
+            <returns>Returns Json object with Responce(Status = int, Message = string)</returns>
+            <response code="200">If such Rancher creds was added correctly.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
         </member>
         <member name="M:WebApplication1.Data.Database.DBWorker.GetConnectionCredsAsync(System.Object)">
             <summary>
@@ -17,6 +136,21 @@
             </summary>
             <param name="connectionType">object of ConnectionType</param>
             <returns>List of enum ConnectionType</returns>
+        </member>
+        <member name="T:WebApplication1.Data.Enums.ConnectionType">
+            <summary>
+            Enum of available Connection types
+            </summary>
+        </member>
+        <member name="F:WebApplication1.Data.Enums.ConnectionType.Rancher">
+            <summary>
+            Rancher = 0
+            </summary>
+        </member>
+        <member name="F:WebApplication1.Data.Enums.ConnectionType.Proxmox">
+            <summary>
+            Proxmox = 1
+            </summary>
         </member>
         <member name="M:WebApplication1.Data.Interfaces.IProxmoxService.CheckCreationAbility(WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
             <summary>
@@ -32,6 +166,81 @@
             </summary>
             <param name="proxmoxId"> Id of Proxmox Cluster from DB.</param>
             <returns></returns>
+        </member>
+        <member name="T:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO">
+            <summary>
+            Info about all type of VMs that must be created in Proxmox
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.ProxmoxId">
+            <summary>
+            Id of Proxmox from DB
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.EtcdAndControlPlaneAmount">
+            <summary>
+            Amount of Control Planes that must be created
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.WorkerAmount">
+            <summary>
+            Amount of Workers that must be created
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.VMTemplateName">
+            <summary>
+            Name of specified Proxmox template
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.RancherId">
+            <summary>
+            Id of Rancher from DB
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.ClusterName">
+            <summary>
+            New Rancher Cluster name
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.VMStartIndex">
+            <summary>
+            Index from with creation of VMs will be started
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.VMPrefix">
+            <summary>
+            The same as Rancher cluster name
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.VMConfig">
+            <summary>
+            Contains Params for workers
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.etcdConfig">
+            <summary>
+            Contains params for Control Planes
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.ProvisionSchema">
+            <summary>
+            Contains info about what vms and on what Proxmox Host need to be deployed
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.ETCDProvisionRange">
+            <summary>
+            Range of hosts for Control Planes
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.WorkerProvisionRange">
+            <summary>
+            Range of hosts for workers
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.CreateVMsDTO.SelectedStorage">
+            <summary>
+            Range of storages for provision VMs (will be selected with max available size).
+            </summary>
         </member>
         <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.NewId">
             <summary>
@@ -62,6 +271,16 @@
         <member name="P:WebApplication1.Data.ProxmoxDTO.FullCloneDTO.Storage">
             <summary>
             Determine vm storage allocation
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Data.ProxmoxDTO.ProxmoxIdDTO">
+            <summary>
+            Represents ID of Proxmox from DB
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxIdDTO.ProxmoxId">
+            <summary>
+            Unique ID from DB
             </summary>
         </member>
         <member name="P:WebApplication1.Data.ProxmoxDTO.ProxmoxNodeInfoDTO.Id">
@@ -129,6 +348,41 @@
             CPU utilization.
             </summary>
         </member>
+        <member name="T:WebApplication1.Data.ProxmoxDTO.TemplateIdDTO">
+            <summary>
+            Info about template on Proxmox host
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.TemplateIdDTO.ProxmoxId">
+            <summary>
+            Id of Proxmox cluster/host from DB
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.TemplateIdDTO.TemplateId">
+            <summary>
+            Id of tamplate on this host
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Data.ProxmoxDTO.TemplateParams">
+            <summary>
+            Contains Info for Proxmox VMs
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.TemplateParams.CPU">
+            <summary>
+            Amount of CPUs
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.TemplateParams.RAM">
+            <summary>
+            Amount of RAM
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.ProxmoxDTO.TemplateParams.HDD">
+            <summary>
+            Amount of HDD
+            </summary>
+        </member>
         <member name="P:WebApplication1.Data.ProxmoxDTO.VmInfoDTO.Cpu">
             <summary>
             Amount currently user CPU
@@ -138,6 +392,37 @@
             <summary>
             Total Amount of CPU given to VM
             </summary>
+        </member>
+        <member name="T:WebApplication1.Data.RancherDTO.CreateClusterDTO">
+            <summary>
+            Info for new Rancher Cluster
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.RancherDTO.CreateClusterDTO.RancherId">
+            <summary>
+            Id of Rancher from DB
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.RancherDTO.CreateClusterDTO.ClusterName">
+            <summary>
+            New Rancher Cluster Name
+            </summary>
+        </member>
+        <member name="M:WebApplication1.Data.Services.ProxmoxService.#ctor(Microsoft.Extensions.Logging.ILogger{WebApplication1.Data.Services.ProxmoxService},Microsoft.Extensions.Configuration.IConfiguration,WebApplication1.Data.Interfaces.IDBService)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="logger"></param>
+            <param name="configuration">type of IConfiguration</param>
+            <param name="provision">type of IDBService</param>
+        </member>
+        <member name="M:WebApplication1.Data.Services.ProxmoxService.StartVmsAsync(System.Collections.Generic.List{System.Int32},System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="vmIds"></param>
+            <param name="proxmoxId"></param>
+            <returns></returns>
         </member>
         <member name="M:WebApplication1.Data.Services.ProxmoxService.CheckCreationAbility(WebApplication1.Data.ProxmoxDTO.CreateVMsDTO)">
             <summary>
@@ -163,9 +448,69 @@
             <param name="vmInfo">Instance of CreateVmDTO.</param>
             <returns></returns>
         </member>
+        <member name="T:WebApplication1.Data.WEB.ConnectionTypeDTO">
+            <summary>
+            Contains Connection type info
+            </summary>
+        </member>
         <member name="P:WebApplication1.Data.WEB.ConnectionTypeDTO.ConnectionType">
             <summary>
             Representation of ConnectionType enum
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Data.WEB.ConnectVmToRancherDTO">
+            <summary>
+            Describes what VM should be connected
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.ConnectVmToRancherDTO.ConnectionString">
+            <summary>
+            Connection string to Rancher cluster
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.ConnectVmToRancherDTO.VMsId">
+            <summary>
+            Unique Id of Proxmox VM
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.ConnectVmToRancherDTO.ProxmoxId">
+            <summary>
+            Proxmox Id From DB
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Data.WEB.Response">
+            <summary>
+            Describes resultes of methosd for user
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.Response.Status">
+            <summary>
+            Curent Status of object(s) in response
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.Response.Message">
+            <summary>
+            Text message
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.Response.Data">
+            <summary>
+            (Optional) if complex data returned
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Data.WEB.SelectOptionDTO">
+            <summary>
+            Object for Frontend specifies available sections
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.SelectOptionDTO.Value">
+            <summary>
+            Value of select html
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Data.WEB.SelectOptionDTO.Text">
+            <summary>
+            text for that Value of html
             </summary>
         </member>
         <member name="T:WebApplication1.Migrations.InitialCreate">
@@ -179,6 +524,106 @@
         </member>
         <member name="M:WebApplication1.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
+        </member>
+        <member name="T:WebApplication1.Models.ProxmoxModel">
+            <summary>
+            Describes model of Proxmox for DB
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.ProxmoxModel.Id">
+            <summary>
+            Unique Id for DB record
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.ProxmoxModel.ProxmoxURL">
+            <summary>
+            URL for Proxmox cluster/host
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.ProxmoxModel.ProxmoxToken">
+            <summary>
+            Acsess token in format PVEAPIToken=User!TokenID=secret
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.ProxmoxModel.ProxmoxNetTags">
+            <summary>
+            Net tags for VMs
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Models.RancherModel">
+            <summary>
+            Describes Rancher for DB
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.RancherModel.Id">
+            <summary>
+            Uniqur Id for DB record
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.RancherModel.RancherURL">
+            <summary>
+            Rancher access URL
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.RancherModel.RancherToken">
+            <summary>
+            Secret of current Rancher user token
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Models.UrlCheckResponse">
+            <summary>
+            Responce
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlCheckResponse.IsValid">
+            <summary>
+            Boolean value of connection availability
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlCheckResponse.Message">
+            <summary>
+            Additional info about connection
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Models.UrlProxmoxCheckModel">
+            <summary>
+            Info for checking connection to Proxomox
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlProxmoxCheckModel.Url">
+            <summary>
+            Url for Proxmox cluster/host
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlProxmoxCheckModel.UserName">
+            <summary>
+            Username for connection
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlProxmoxCheckModel.TokenID">
+            <summary>
+            Token Id for connection
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlProxmoxCheckModel.TokenSecret">
+            <summary>
+            Secret of Token ID
+            </summary>
+        </member>
+        <member name="T:WebApplication1.Models.UrlRancherCheckModel">
+            <summary>
+            Info for Checkin connection to Rancher
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlRancherCheckModel.Url">
+            <summary>
+            Url of Rancher
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.UrlRancherCheckModel.Token">
+            <summary>
+            Secret token of user
+            </summary>
         </member>
     </members>
 </doc>

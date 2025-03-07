@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data.Interfaces;
 using WebApplication1.Models;
-using static WebApplication1.Models.ConnectionModel;
 
 namespace WebApplication1.Data.Services;
 

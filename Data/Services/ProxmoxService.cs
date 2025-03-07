@@ -24,7 +24,12 @@ public class ProxmoxService : IProxmoxService
 
     private readonly IConfiguration _configuration;
 
-
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="configuration">type of IConfiguration</param>
+    /// <param name="provision">type of IDBService</param>
     public ProxmoxService(ILogger<ProxmoxService> logger, IConfiguration configuration, IDBService provision = null)
     {
         _logger = logger;
@@ -32,6 +37,12 @@ public class ProxmoxService : IProxmoxService
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="vmIds"></param>
+    /// <param name="proxmoxId"></param>
+    /// <returns></returns>
     public async Task<Dictionary<int, bool>> StartVmsAsync(List<int> vmIds, int proxmoxId)
     {
         if (vmIds.Count == 0)
@@ -415,10 +426,6 @@ public class ProxmoxService : IProxmoxService
                 //}
             }
 
-            
-            
-
-            var t = 0;
             return VMsAllocation;
         }
         catch (Exception ex)

@@ -23,10 +23,12 @@ public class ProvisionController : ControllerBase
     }
 
     /// <summary>
-    /// Search all connections of specified type in backend
+    /// Search all connections of specified type in DB
     /// </summary>
     /// <param name="connectionTarget">Concret type on ConnectionType enum. Rancher = 0, Proxmox = 1</param>
-    /// <returns>Returns Json that contains List of creds on type</returns>
+    /// <returns>Returns Json that contains List of creds of specified type</returns>
+    /// <response code="200">If Creds available.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpPost]
     public async Task<IActionResult> GetConnectionCreds([FromBody] ConnectionTypeDTO connectionTarget)
     {
@@ -42,6 +44,13 @@ public class ProvisionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Creates New Rancher Cluster
+    /// </summary>
+    /// <param name="data">Object of CreateClusterDTO</param>
+    /// <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+    /// <response code="200">If Rancher cluster was created correctly.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpPost]
     public async Task<IActionResult> CreateClaster([FromBody] CreateClusterDTO data)
     {
@@ -57,6 +66,13 @@ public class ProvisionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Creates all number of VMs in Proxmox
+    /// </summary>
+    /// <param name="data">Object of CreateVMsDTO</param>
+    /// <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+    /// <response code="200">If VMs was created.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpPost]
     public async Task<IActionResult> CreateProxmoxVMs([FromBody] CreateVMsDTO data)
     {
@@ -72,6 +88,13 @@ public class ProvisionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Gwts conncetion string for VMs to be able connect to Rancher cluster
+    /// </summary>
+    /// <param name="clusterInfo">Object of CreateClusterDTO</param>
+    /// <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+    /// <response code="200">If Rancher available.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpPost]
     public async Task<IActionResult> GetConnectionStringToRancher([FromBody] CreateClusterDTO clusterInfo)
     {
@@ -86,6 +109,13 @@ public class ProvisionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Trys to start created Proxmox VMs and config them to work as RKE2 cluster.
+    /// </summary>
+    /// <param name="data">Object of ConnectVmToRancherDTO</param>
+    /// <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+    /// <response code="200">If VMs added corretly or with warnings.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpPost]
     public async Task<IActionResult> StartVMAndConnectToRancher([FromBody] ConnectVmToRancherDTO data)
     {
@@ -100,6 +130,13 @@ public class ProvisionController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Checks if it`s awailable to create specified set of VMs in selected Proxmox cluster
+    /// </summary>
+    /// <param name="info">Object of CreateVMsDTO</param>
+    /// <returns>Returns JSON object Responce(Status = int, Message = string).</returns>
+    /// <response code="200">If creation of VMs is available.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpPost]
     public async Task<IActionResult> GetCreationAvailibility([FromBody] CreateVMsDTO info)
     {

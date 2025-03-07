@@ -10,9 +10,19 @@ public enum Status
     ERROR = 500
 }
 
+/// <summary>
+/// Enum of available Connection types
+/// </summary>
 public enum ConnectionType
 {
+    /// <summary>
+    /// Rancher = 0
+    /// </summary>
     Rancher,
+
+    /// <summary>
+    /// Proxmox = 1
+    /// </summary>
     Proxmox
 }
 

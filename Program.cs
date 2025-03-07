@@ -20,7 +20,7 @@ public class Program
 
         // Add DBContext to conect to DB.
         builder.Services.AddDbContext<MainDBContext>(options => 
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient, ServiceLifetime.Transient);
+            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient, ServiceLifetime.Transient);      
 
         //Add DBWorker for DB proccess
         builder.Services.AddTransient<IDBService, DBWorker>();
@@ -53,7 +53,7 @@ public class Program
             app.UseHsts();
         }
         
-        app.UseHttpsRedirection();
+        //app.UseHttpsRedirection();
         app.UseStaticFiles();
 
         

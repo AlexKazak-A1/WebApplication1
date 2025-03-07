@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data.Interfaces;
-using static WebApplication1.Models.ConnectionModel;
+using WebApplication1.Models;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
@@ -19,6 +19,14 @@ public class ConnectionController : ControllerBase
     }
 
     // Метод для проверки доступности Rancher URL
+
+    /// <summary>
+    /// Method fo checking Rancher URL availability
+    /// </summary>
+    /// <param name="model">Represent UrlRancherCheckModel</param>
+    /// <returns>Returns the json object representing UrlCheckResponse { IsValid = bool, Message = string }</returns>
+    /// <response code="200">If such Rancher URL is accessible.</response>
+    /// <response code="500">If an exception is thrown.</response>
     [HttpPost]
     public async Task<IActionResult> CheckRancherUrl([FromBody] UrlRancherCheckModel model)
     {
@@ -33,6 +41,14 @@ public class ConnectionController : ControllerBase
     }
 
     // Метод для проверки доступности Proxmox URL
+
+    /// <summary>
+    /// Method fo checking Proxmox URL availability
+    /// </summary>
+    /// <param name="model">Represent UrlProxmoxCheckModel</param>
+    /// <returns>Returns the json object representing UrlCheckResponse { IsValid = bool, Message = string }</returns>
+    /// <response code="200">If such Proxmox URL is accessible.</response>
+    /// <response code="500">If an exception is thrown.</response>
     [HttpPost]
     public async Task<IActionResult> CheckProxmoxUrl([FromBody] UrlProxmoxCheckModel model)
     {

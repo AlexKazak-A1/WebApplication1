@@ -2,6 +2,9 @@
 
 namespace WebApplication1.Data.WEB;
 
+/// <summary>
+/// Contains Connection type info
+/// </summary>
 public class ConnectionTypeDTO
 {
     /// <summary>

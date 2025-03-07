@@ -23,6 +23,13 @@ public class RancherController : ControllerBase
         _rancherService = rancherService;
     }
 
+    /// <summary>
+    /// Creates new Rancher connection creds in DB
+    /// </summary>
+    /// <param name="model">Model that represents main creds for Rancher connection</param>
+    /// <returns>Returns Json object with Responce(Status = int, Message = string)</returns>
+    /// <response code="200">If such Rancher creds was added correctly.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpPost]
     public async Task<IActionResult> CreateNewRancherCred([FromBody] RancherModel model)
     {

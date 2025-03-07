@@ -3,7 +3,6 @@ using System.Diagnostics;
 using WebApplication1.Models;
 using System.Net.Http;
 using System.Threading.Tasks;
-using static WebApplication1.Models.ConnectionModel;
 using System.Runtime.CompilerServices;
 using WebApplication1.Data.WEB;
 using WebApplication1.Data.Interfaces;
