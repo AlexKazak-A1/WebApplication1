@@ -16,14 +16,14 @@
     <form>
         <div class="container">
             <div class="column">
-                <label for="rancherTemplates">Select Rancher:</label>
-                <select name="rancherTemplates" id="select-rancher-template">
+                <label for="select-rancher-template">Select Rancher:</label>
+                <select name="select-rancher-template" id="select-rancher-template">
                     <option value="">Data loading...</option>
                 </select>
             </div>
             <div class="column">
-                <label for="proxmoxTemplates">Select Proxmox:</label>
-                <select name="proxmoxTemplates" id="select-proxmox-template">
+                <label for="select-proxmox-template">Select Proxmox:</label>
+                <select name="select-proxmox-template" id="select-proxmox-template">
                     <option value="">Data loading...</option>
                 </select>
             </div>
@@ -52,6 +52,12 @@
 
         </div>
     </form>
+    <div>
+        <label for="select-vlan-tag">Select VLAN Tag</label>
+        <select name="select-vlan-tag" id="select-vlan-tag">
+            <option value="">Will appear after Proxmox select</option>
+        </select>
+    </div>
     <form>
         <label for="select-vm-template">Select a tamplate for provision VM</label>
         <select name="templates" id="select-vm-template">
@@ -129,7 +135,8 @@
         const templateSelect = document.getElementById('select-vm-template');
         const clusterNameInput = document.getElementById('clusterName');
         const workerInput = document.getElementById('workerNumber');
-        const etcdAndCPInput = document.getElementById('etcdAndCPNumber');        
+        const etcdAndCPInput = document.getElementById('etcdAndCPNumber');    
+        const vlanTagSelect = document.getElementById('select-vlan-tag');
 
         const clusterCreateButton = document.getElementById('createRancherClusterButtonTest');
 
@@ -139,13 +146,21 @@
             
             if (proxmoxValue === '') {
                 templateSelect.innerHTML = ''; // Clear existing options
+                vlanTagSelect.innerHTML = '';
 
-                const defaultOption = document.createElement('option');
+                let defaultOption = document.createElement('option');
 
                 defaultOption.place
                 defaultOption.value = '';
                 defaultOption.textContent = 'Select Proxmox First';
                 templateSelect.appendChild(defaultOption);
+
+                defaultOption = document.createElement('option');
+
+                defaultOption.place
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select Proxmox First';
+                vlanTagSelect.appendChild(defaultOption);
             }
 
             if (rancherValue) {
@@ -167,6 +182,39 @@
                 await CreateProvisionBlock(baseURL, data);
                 // Call your function here
                 getTemplates(baseURL + 'api/Proxmox/GetTemplate', 'select-vm-template', data);
+
+                await GetVlanTags(baseURL, data);
+            }
+        }
+
+        async function GetVlanTags(baseURL, data) {
+            let url = baseURL + 'api/Proxmox/GetProxmoxVLANTags';
+            let result = await postToController(url, data);
+
+            let vlanSelect = document.getElementById('select-vlan-tag');
+            vlanSelect.innerHTML = '';
+
+            if(vlanSelect)
+            {
+                const defaultOption = document.createElement('option');
+
+                defaultOption.place
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select item';
+                vlanSelect.appendChild(defaultOption);
+
+                 // Extract the array from the "value" property
+            if (result && Array.isArray(result.value)) {
+                result.value.forEach(item => {
+                    const option = document.createElement('option');
+                    let text = parseInt(item, 10);
+                    option.value = text;
+                    option.textContent = text;
+                    vlanSelect.appendChild(option);
+                });
+            } else {
+                console.error('Response does not contain a valid "value" array:', data);
+            }
             }
         }
 
@@ -250,7 +298,7 @@
             }
         });
 
-        [clusterNameInput, workerInput, etcdAndCPInput, vmStartIndex].forEach(element => {
+        [clusterNameInput, workerInput, etcdAndCPInput, vmStartIndex, vlanTagSelect].forEach(element => {
             if (element) {
                 // Ensure the element is not null
                 element.addEventListener('input', updateButtonState);
@@ -263,11 +311,7 @@
         templateSelect.addEventListener('input', updateButtonState);
         templateSelect.addEventListener('change', updateButtonState);
         templateSelect.addEventListener('change', showTemplateParams);
-                
-        //clusterNameInput.addEventListener('input', updateButtonState);
-        // rancherSelect.addEventListener('change', checkSelections);
-        // proxmoxSelect.addEventListener('change', checkSelections);
-
+               
     });
 
     window.onload = async () => {
@@ -319,6 +363,9 @@
             const workerHDD = document.getElementById('workerHDD');
             const workerHDDValue = workerHDD.value;
 
+            const vlanTag = document.getElementById('select-vlan-tag');
+            const selectedVlanTag = parseInt(vlanTag.options[vlanTag.selectedIndex].text, 10);
+
             let templateID = parseInt(template.value, 10);
             let proxmoxId = parseInt(selectedProxmoxValue, 10);
 
@@ -359,7 +406,8 @@
                 etcdProvisionRange: hostsEtcd,
                 workerProvisionRange: hostsWorker,
                 selectedStorage: storages,
-                provisionSchema: {}
+                provisionSchema: {},
+                selectedVlan: selectedVlanTag,
             }
 
             let isCreationAvailable = await GetCreationAvailibility(data);      

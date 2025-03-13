@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
@@ -14,6 +15,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Controllers;
 
+[Authorize]
 public class ProvisionController : Controller
 {
     private readonly ILogger<ProvisionController> _logger;   

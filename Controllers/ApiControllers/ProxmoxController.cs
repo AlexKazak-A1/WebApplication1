@@ -133,4 +133,25 @@ public class ProxmoxController : ControllerBase
             return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetProxmoxHosts)} in {nameof(ProxmoxController)}" }));
         }
     }
+
+    /// <summary>
+    /// Gets list of available VLAN tags in Proxmox Cluster/host
+    /// </summary>
+    /// <param name="data">Object representing ProxmoxIdDTO</param>
+    /// <returns>Returns list of string representing IDs of Proxomox VLAN Tags</returns>
+    /// <response code="200">If Proxmox available.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
+    [HttpPost]
+    public async Task<IActionResult> GetProxmoxVLANTags([FromBody] ProxmoxIdDTO data)
+    {
+        try
+        {
+            var result = await _proxmoxService.GetProxmoxVLANTags(data.ProxmoxId);
+            return Ok(new JsonResult(result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetProxmoxVLANTags)} in {nameof(ProxmoxController)}" }));
+        }
+    }
 }

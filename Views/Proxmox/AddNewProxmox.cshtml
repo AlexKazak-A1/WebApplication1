@@ -27,13 +27,7 @@
                 <label for="tockenSecretProxmox">Token Secret:</label>
                 <input type="text" id="tokenSecretProxmox" name="tokenSecretProxmox" required />
             </div>
-            <form id="vlanTagsForm">
-                <label>Add new VLAN tag:</label><br>
-                <div id="vlanTags">
-                    <!--input type="text" name="stringList" placeholder="New VLAN Tag"-->
-                </div>
-                <button type="button" onclick="addInputField()">Add New VLAN TAG</button>
-            </form>            
+                     
             <div>
                 <button type="button" style="margin-top:10px" id="checkProxmoxButton" onclick="checkProxmoxConn()">Check URL</button>
             </div>
@@ -71,7 +65,6 @@
         const data = {
             proxmoxurl: proxmox_URL,
             proxmoxtoken: proxmox_Token,
-            ProxmoxNetTags: getAllInputValues(),
         }
 
         postToController(url, data)
@@ -120,13 +113,7 @@
                     isProxmoxChecked = true;
                     proxmox_URL = urlValue;
                     proxmox_Token = 'PVEAPIToken=' + usernameValue + '!' + tokenIDValue + '=' + tokenSecValue;
-                    enableAddNewProxmoxButton();
-                    //saveToCookies('proxmoxUrl', urlValue);
-                    //saveToCookies('proxmoxToken', 'PVEAPIToken=' + usernameValue + '!' + tokenIDValue + '=' + tokenSecValue)
-                    //saveToCookies('proxmoxUsername', usernameValue);
-                    //saveToCookies('proxmoxTokenID', tokenIDValue);
-                    //saveToCookies('proxmoxTokenSecret', tokenSecValue);
-                    
+                    enableAddNewProxmoxButton();                    
                 } else {
                     button.html('<p style="color: red; text-align: center">URL is not accessible</p>');
                     isProxmoxChecked = false;
@@ -138,47 +125,4 @@
             }
         });
     }
-    
-    //Add new HTML for new input field
-    function addInputField() {
-        const container = document.getElementById('vlanTags');
-
-        // Создаем контейнер для группы ввода
-        const inputGroup = document.createElement('div');
-        inputGroup.classList.add('input-group');
-
-        // Создаем поле ввода
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.name = 'stringList';
-        input.placeholder = 'New Vlan Tag';
-
-        // Создаем кнопку удаления
-        const removeButton = document.createElement('button');
-        removeButton.type = 'button';
-        removeButton.textContent = 'Delete';
-        removeButton.onclick = () => container.removeChild(inputGroup);
-
-        // Добавляем элементы в группу
-        inputGroup.appendChild(input);
-        inputGroup.appendChild(removeButton);
-
-        // Добавляем группу в контейнер
-        container.appendChild(inputGroup);
-    }
-    
-    // Get all values fron input fields
-    function getAllInputValues() {
-        // Получаем контейнер
-        const container = document.getElementById('vlanTags');
-
-        // Находим все текстовые поля внутри контейнера
-        const inputs = container.querySelectorAll('input[name="stringList"]');
-
-        // Преобразуем NodeList в массив и извлекаем значения
-        const values = Array.from(inputs).map(input => input.value.trim());
-
-        return values;
-    }
-
 </script>

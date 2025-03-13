@@ -23,10 +23,5 @@ public class ProxmoxModel
     /// <summary>
     /// Acsess token in format PVEAPIToken=User!TokenID=secret
     /// </summary>
-    public string ProxmoxToken { get; set; } 
-    
-    /// <summary>
-    /// Net tags for VMs
-    /// </summary>
-    public string[] ProxmoxNetTags {  get; set; } 
+    public string ProxmoxToken { get; set; }  
 }

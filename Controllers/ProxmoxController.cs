@@ -10,9 +10,11 @@ using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.WEB;
 using WebApplication1.Models;
 using WebApplication1.Data.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApplication1.Controllers;
 
+[Authorize]
 public class ProxmoxController : Controller
 {
     private readonly ILogger<ProxmoxController> _logger;

@@ -90,4 +90,10 @@ public class CreateVMsDTO
     /// </summary>
     [JsonProperty("selectedStorage")]
     public List<string> SelectedStorage { get; set; }
+
+    /// <summary>
+    /// Determines vlan tag for VM Deploying
+    /// </summary>
+    [JsonProperty("selectedVlan")]
+    public int? SelectedVlan { get; set; } = default;
 }

@@ -8,9 +8,11 @@ using WebApplication1.Data.WEB;
 using WebApplication1.Data.Interfaces;
 using WebApplication1.Data.Enums;
 using WebApplication1.Data.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApplication1.Controllers;
 
+[Authorize]
 public class RancherController : Controller
 {
     private readonly ILogger<RancherController> _logger;

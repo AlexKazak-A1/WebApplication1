@@ -209,6 +209,12 @@ async function GetProxmoxStorages(baseURL, data) {
     return proxmoxStorages.value;
 }
 
+async function GetVLANTags(baseURL, data) {
+    let hostURl = baseURL + 'api/Proxmox/GetProxmoxVLANTags'
+    let proxmoxVLANTags = await postToController(hostURl, data);
+
+    return proxmoxVLANTags.value;
+}
 async function wait(seconds) {
     return new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }

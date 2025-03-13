@@ -9,6 +9,8 @@ using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.WEB;
 using WebApplication1.Models;
 using WebApplication1.Data.ProxmoxDTO.Node;
+using System.Text.Json.Nodes;
+using System.Reflection;
 
 
 namespace WebApplication1.Data.Services;
@@ -125,6 +127,25 @@ public class ProxmoxService : IProxmoxService
         }
 
         var response = await SendRequestToProxmoxAsync($"{proxmoxConn.ProxmoxURL}/api2/json/nodes", HttpMethod.Get, proxmoxConn.ProxmoxToken);
+
+        if (response != null && response.Data is JArray jArray)
+        {
+            var nodesInfoList = jArray.ToObject<List<ProxmoxNodeInfoDTO>>();
+
+            if (nodesInfoList != null)
+            {
+                nodesList.AddRange(nodesInfoList);
+            }
+        }
+
+        return nodesList;
+    }
+
+    public async Task<List<ProxmoxNodeInfoDTO>> GetProxmoxNodesListAsync(ProxmoxModel proxmox)
+    {
+        var nodesList = new List<ProxmoxNodeInfoDTO>();
+
+        var response = await SendRequestToProxmoxAsync($"{proxmox.ProxmoxURL}/api2/json/nodes", HttpMethod.Get, proxmox.ProxmoxToken);
 
         if (response != null && response.Data is JArray jArray)
         {
@@ -290,21 +311,6 @@ public class ProxmoxService : IProxmoxService
         if (string.IsNullOrEmpty(model.ProxmoxToken))
         {
             return new JsonResult(new Response { Status = Status.WARNING, Message = "Proxmox Token is empty" });
-        }
-
-        if (model.ProxmoxNetTags == null || model.ProxmoxNetTags.Length == 0)
-        {
-            return new JsonResult(new Response { Status = Status.WARNING, Message = "NO Proxmox VLAN TAGS" });
-        }
-        else
-        {
-            for (int i = 0; i < model.ProxmoxNetTags.Length; i++)
-            {
-                if (model.ProxmoxNetTags[i] == string.Empty)
-                {
-                    return new JsonResult(new Response { Status = Status.WARNING, Message = "One of VLAN TAGS is empty" });
-                }
-            }
         }
 
         if (!await _dbWorker.CheckDBConnection())
@@ -480,6 +486,36 @@ public class ProxmoxService : IProxmoxService
         }
     }
 
+    /// <summary>
+    /// Gets list of available VLAN tags in Proxmox Cluster/host
+    /// </summary>
+    /// <param name="proxmoxId">Id of Proxmox connection from DB</param>
+    /// <returns>Returns list of string representing IDs of Proxomox VLAN Tags</returns>
+    public async Task<List<string>> GetProxmoxVLANTags(int proxmoxId)
+    {
+        var proxmoxes = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox)) as List<ProxmoxModel>;
+        var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
+
+        var node = (await GetProxmoxNodesListAsync(proxmoxId)).Select(x => x.Node).FirstOrDefault();
+
+        var netList = new List<ProxmoxNetworkInfoDTO>();
+        var url = $"{currentProxmox!.ProxmoxURL}/api2/json/nodes/{node}/network";
+        var responce = await SendRequestToProxmoxAsync(url, HttpMethod.Get, currentProxmox.ProxmoxToken);
+
+        if (responce.Data == null)
+        {
+            return new List<string>();
+        }
+
+        //_logger.LogInformation(responce.Data.ToString());
+        var netInfo = JsonConvert.DeserializeObject<List<ProxmoxNetworkInfoDTO>>(responce!.Data!.ToString()!);
+
+        netList.AddRange(netInfo!);
+
+        var result = netList.Where(x => x.VlanId != null).Select(x => new string(x.VlanId)).Distinct().ToList();
+        return  result ?? new List<string>();
+    }
+
     private async Task<NodeOversubscriptionDTO> CountOversubscription(ProxmoxModel currentProx, string nodeName, double cpuLimit)
     {
         var url = $"{currentProx.ProxmoxURL}/api2/json/nodes/{nodeName}/status";
@@ -550,11 +586,13 @@ public class ProxmoxService : IProxmoxService
             var response = await httpClient.SendAsync(request);
             var result = await response.Content.ReadAsStringAsync();
 
-            return JsonConvert.DeserializeObject<ProxmoxResponse>(result);
+            //_logger.LogInformation($"{url}\n{result}");
+            
+            return JsonConvert.DeserializeObject<ProxmoxResponse>(result ?? /*lang=json,strict*/ "{ \"data\": \"null\" }");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"{nameof(ProxmoxService)} \n" + ex.Message);
+            _logger.LogError($"{nameof(ProxmoxService)} \n" + ex.Message + $"\n{ex?.InnerException}");
             return new ProxmoxResponse { Error = $"Error in {nameof(SendRequestToProxmoxAsync)}", Data = null };
         }
     }
@@ -637,11 +675,11 @@ public class ProxmoxService : IProxmoxService
 
                     if (data.Name.Contains(MASTER))
                     {
-                        await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.etcdConfig);
+                        await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.etcdConfig, vmInfo.SelectedVlan);
                     }
                     else
                     {
-                        await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.VMConfig);
+                        await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.VMConfig, vmInfo.SelectedVlan);
                     }
                 }
             }
@@ -677,7 +715,7 @@ public class ProxmoxService : IProxmoxService
 
                             vmList.Add(await CreateVM(proxmoxCred.ProxmoxURL, currentTemplateNode, proxmoxCred.ProxmoxToken, currentTemplateId, payload));
 
-                            await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.VMConfig);
+                            await Reconfigure(vmInfo.ProxmoxId, proxmoxCred, currentTemplateNode, data.NewId, vmInfo.VMConfig, vmInfo.SelectedVlan);
                         }
 
                         return vmList;
@@ -823,12 +861,18 @@ public class ProxmoxService : IProxmoxService
 
     private async Task<bool> GetReadyStateOfVM(int proxmoxId, int vmId, ProxmoxModel currentProxmox, string connectionString)
     {
+
+        await Task.Delay(10 * 1_000);
         var linuxCommand = "journalctl | grep 'cloud-init' | grep 'finished' | grep 'Up'";
-        var IsVmReady = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);
+        var IsVmReady = await SendQemuGuestCommand(vmId, currentProxmox, linuxCommand);
         
+        while(IsVmReady == null)
+        {
+            IsVmReady = await SendQemuGuestCommand(vmId, currentProxmox, linuxCommand);
+        }
 
 
-        if (!IsVmReady)
+        if (!(bool)IsVmReady)
         {
             return false;
         }
@@ -844,7 +888,7 @@ public class ProxmoxService : IProxmoxService
             
         };
 
-        if (!await SendGroupOfCommands(proxmoxId, vmId, currentProxmox, listOfCommands)) 
+        if (!await SendGroupOfCommands(vmId, currentProxmox, listOfCommands)) 
         {           
             return false;
         }
@@ -854,12 +898,22 @@ public class ProxmoxService : IProxmoxService
         if (vmName.Contains("master") )
         {
             linuxCommand = SetLinuxConnectCommand(connectionString, " --etcd --controlplane");
-            vmReady = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);            
+            var readyStatus = await SendQemuGuestCommand(vmId, currentProxmox, linuxCommand); 
+            while (readyStatus == null)
+            {
+                readyStatus = await SendQemuGuestCommand(vmId, currentProxmox, linuxCommand);
+            }
+            vmReady = (bool)readyStatus;
         }
         else if (vmName.Contains("worker"))
         {
             linuxCommand = SetLinuxConnectCommand(connectionString, " --worker");
-            vmReady = await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, linuxCommand);            
+            var readyStatus = await SendQemuGuestCommand(vmId, currentProxmox, linuxCommand);
+            while (readyStatus == null)
+            {
+                readyStatus = await SendQemuGuestCommand(vmId, currentProxmox, linuxCommand);
+            }
+            vmReady = (bool)readyStatus;
         }
 
         return vmReady;
@@ -918,16 +972,17 @@ public class ProxmoxService : IProxmoxService
         }
     }
 
-    private async Task<bool> SendQemuGuestCommand(int proxmoxId, int vmId, ProxmoxModel currentProxmox,string linuxCommand)
+    private async Task<bool?> SendQemuGuestCommand(int vmId, ProxmoxModel currentProxmox,string linuxCommand)
     {        
         try
         {
             string node = string.Empty;
-            lock (_sync)
+            node = await GetNodeName(currentProxmox, vmId);
+            
+            if (string.IsNullOrEmpty(node))
             {
-                node = GetNodeName(proxmoxId, vmId).Result;
+                return null;
             }
-
 
             var url = currentProxmox.ProxmoxURL + $"/api2/json/nodes/{node}/qemu/{vmId}/agent/exec";
             var command = new QemuGuestCommandDTO
@@ -947,18 +1002,22 @@ public class ProxmoxService : IProxmoxService
 
             while (responce.Data == null)
             {
+                if (string.IsNullOrEmpty(node) || (responce.Data == null && responce.ErrorData == null && responce.Error == null))
+                {
+                    return null;
+                }
                 responce = await SendRequestToProxmoxAsync(url, HttpMethod.Post, currentProxmox.ProxmoxToken, payload);
             }
 
             var pid = JsonConvert.DeserializeObject<QemuGuestCommandResponceDTO>(responce.Data?.ToString()!)?.Pid ?? 0;
 
-            var result = await GetCommandResult(proxmoxId, vmId, currentProxmox, pid);
+            var result = await GetCommandResult(vmId, currentProxmox, pid);
 
             while (result == null)
             {
                 responce = await SendRequestToProxmoxAsync(url, HttpMethod.Post, currentProxmox.ProxmoxToken, payload);
                 pid = JsonConvert.DeserializeObject<QemuGuestCommandResponceDTO>(responce.Data?.ToString()!)?.Pid ?? 0;
-                result = await GetCommandResult(proxmoxId, vmId, currentProxmox, pid);
+                result = await GetCommandResult(vmId, currentProxmox, pid);
             }
 
             return (bool)result;
@@ -966,21 +1025,17 @@ public class ProxmoxService : IProxmoxService
         catch (Exception ex)
         {
             _logger.LogError(ex.Message + "\n" + ex.InnerException?.Message);
-            return false;
+            return null;
         }
-
-
-
-
     }
 
-    private async Task<bool?> GetCommandResult(int proxmoxId, int vmId, ProxmoxModel currentProxmox, int pid)
+    private async Task<bool?> GetCommandResult(int vmId, ProxmoxModel currentProxmox, int pid)
     {
         try
         {
-            var nodes = await GetProxmoxNodesListAsync(proxmoxId);
+            var nodes = await GetProxmoxNodesListAsync(currentProxmox);
             var nodeList = nodes.Select(x => x.Node);
-            string node = await GetNodeName(proxmoxId, vmId);
+            string node = await GetNodeName(currentProxmox, vmId);
 
             var url = currentProxmox.ProxmoxURL + $"/api2/json/nodes/{node}/qemu/{vmId}/agent/exec-status?pid={pid}";
 
@@ -989,14 +1044,19 @@ public class ProxmoxService : IProxmoxService
                 var result = await SendRequestToProxmoxAsync(url, HttpMethod.Get, currentProxmox.ProxmoxToken);
                 var resultData = result.Data;                
 
-                if (result.ErrorData != null)
+                if (result.ErrorData != null )
                 {
                     break;
                 }
 
-                var res = JsonConvert.DeserializeObject<QemuGuestStatusResponceDTO>(result.Data?.ToString());
+                if (result.Error == null && result.Data == null && result.ErrorData == null)
+                {
+                    return null;
+                }
 
-                if (res != null && res.ExitCode == 0 && res.Exited && !string.IsNullOrEmpty(res.OutPut))
+                var res = JsonConvert.DeserializeObject<QemuGuestStatusResponceDTO>(result!.Data!.ToString()!);
+
+                if (res != null && res.ExitCode == 0 && res.Exited /*&& !string.IsNullOrEmpty(res.OutPut)*/)
                 {
                     return true;
                 }
@@ -1012,7 +1072,11 @@ public class ProxmoxService : IProxmoxService
                 }
                 else if (res != null && res.Exited && res.ExitCode == 100)
                 {
-                    await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, "sudo dpkg --configure -a");
+                    if (res.OutPut.Contains("Something wicked happened resolving"))
+                    {
+                        return false;
+                    }
+                    await SendQemuGuestCommand(vmId, currentProxmox, "sudo dpkg --configure -a");
                 }
                 else
                 {
@@ -1024,6 +1088,16 @@ public class ProxmoxService : IProxmoxService
             _logger.LogError($"Error in {vmId}");
             return false;
         }
+        catch(NullReferenceException ex)
+        {
+            _logger.LogError($"Error in {vmId}\n{ex.Message}");
+            return null;
+        }
+        catch(IOException ex)
+        {
+            _logger.LogError($"Error in {vmId}\n{ex.Message}");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError($"Error in {vmId}\n{ex.Message}");
@@ -1031,17 +1105,15 @@ public class ProxmoxService : IProxmoxService
         }
     }
 
-    private async Task<string> GetNodeName(int proxmoxId, int vmId)
+    private async Task<string> GetNodeName(ProxmoxModel proxmox, int vmId)
     {
-        var nodes = await GetProxmoxNodesListAsync(proxmoxId);
+        var nodes = await GetProxmoxNodesListAsync(proxmox);
         var nodeList = nodes.Select(x => x.Node);
-        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
-        var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
-
+       
         foreach (var item in nodeList)
         {
-            var url = currentProxmox?.ProxmoxURL + $"/api2/json/nodes/{item}/qemu/{vmId}/config";
-            var res = (await SendRequestToProxmoxAsync(url, HttpMethod.Get, currentProxmox.ProxmoxToken)).Data;
+            var url = proxmox?.ProxmoxURL + $"/api2/json/nodes/{item}/qemu/{vmId}/config";
+            var res = (await SendRequestToProxmoxAsync(url, HttpMethod.Get, proxmox.ProxmoxToken)).Data;
 
             if (res != null)
             {
@@ -1062,7 +1134,7 @@ public class ProxmoxService : IProxmoxService
         return result;
     }
 
-    private async Task Reconfigure(int proxmoxId, ProxmoxModel proxmoxModel, string currentNode, int vmId, TemplateParams vmConfig)
+    private async Task Reconfigure(int proxmoxId, ProxmoxModel proxmoxModel, string currentNode, int vmId, TemplateParams vmConfig, int? vlanTag = default)
     {
         try
         {
@@ -1071,15 +1143,39 @@ public class ProxmoxService : IProxmoxService
             var templateParam = double.Parse(vmConfig.HDD.Replace(',', '.'), CultureInfo.InvariantCulture);
             var currHDDSize = double.Round(FormatBytes(info.MaxDisk), 1);
 
+            var url = $"{proxmoxModel.ProxmoxURL}/api2/json/nodes/{currentNode}/qemu/{vmId}/config";
+            var res = JObject.Parse((await SendRequestToProxmoxAsync(url, HttpMethod.Get, proxmoxModel.ProxmoxToken)).Data.ToString());
+            KeyValuePair<string, JToken?> net = default;
+            foreach (var i in res)
+            {
+                if (i.Key.Contains("net"))
+                {
+                    net = i;
+                    break;
+                }
+            }
+
+            var newNetTag = string.Empty;
+            if (net.Key != default)
+            {
+                var netString = net.Value.ToString();
+                newNetTag = $", \"{net.Key}\": \"{netString[..(netString.IndexOf("tag=") + 4)] + vlanTag}\" ";
+            }
+            
+
             if (info.CPUS != cpu || currHDDSize != templateParam)
             {
                 // setting VM Params 
                 var newConfig = new { sockets = 1, cores = cpu, vcpus = cpu, memory = double.Parse(vmConfig.RAM, CultureInfo.InvariantCulture) * 1024 };
+                
                 var payload = JsonConvert.SerializeObject(newConfig);
 
-                var url = $"{proxmoxModel.ProxmoxURL}/api2/json/nodes/{currentNode}/qemu/{vmId}/config";
+                if (!string.IsNullOrEmpty(newNetTag))
+                {
+                    payload = payload[..(payload.LastIndexOf('}') - 2)] + newNetTag + '}';
+                }
+                
                 await SendRequestToProxmoxAsync(url, HttpMethod.Post, proxmoxModel.ProxmoxToken, payload);
-
 
                 // Setting New Vm Disk size
                 var incrementSize = double.Parse(vmConfig.HDD.Replace(',', '.'), CultureInfo.InvariantCulture) - double.Round( FormatBytes(info.MaxDisk), 1);
@@ -1093,7 +1189,7 @@ public class ProxmoxService : IProxmoxService
                 payload = JsonConvert.SerializeObject(newSize);
 
                 url = $"{proxmoxModel.ProxmoxURL}/api2/json/nodes/{currentNode}/qemu/{vmId}/resize";
-                 await SendRequestToProxmoxAsync(url, HttpMethod.Put, proxmoxModel.ProxmoxToken, payload);
+                await SendRequestToProxmoxAsync(url, HttpMethod.Put, proxmoxModel.ProxmoxToken, payload);
             }
         }
         catch (Exception ex)
@@ -1102,12 +1198,18 @@ public class ProxmoxService : IProxmoxService
         }
     }
 
-    private async Task<bool> SendGroupOfCommands(int proxmoxId, int vmId, ProxmoxModel currentProxmox, List<string> list)
+    private async Task<bool> SendGroupOfCommands(int vmId, ProxmoxModel currentProxmox, List<string> list)
     {
         var resultList = new List<bool>();
         foreach (var command in list)
         {
-            resultList.Add(await SendQemuGuestCommand(proxmoxId, vmId, currentProxmox, command));
+            var readyStatus = await SendQemuGuestCommand(vmId, currentProxmox, command);
+            while (readyStatus == null)
+            {
+                readyStatus = await SendQemuGuestCommand(vmId, currentProxmox, command);
+            }
+
+            resultList.Add((bool)readyStatus);
 
             if (command.Contains("reboot"))
             {                

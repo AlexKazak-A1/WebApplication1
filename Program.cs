@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
 using WebApplication1.Data.Database;
 using WebApplication1.Data.Interfaces;
 using WebApplication1.Data.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace WebApplication1;
 
@@ -12,6 +13,18 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        // Настройки аутентификации с таймаутом 30 минут
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
+            {
+                options.LoginPath = "/Account/Login"; // Перенаправление на страницу авторизации
+                options.AccessDeniedPath = "/Account/Login"; // Если нет доступа, также редирект на Login
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Таймаут авторизации
+                options.SlidingExpiration = true; // Обновляет таймер при активности
+            });
+
+        builder.Services.AddAuthorization();
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
@@ -45,6 +58,7 @@ public class Program
             c.IncludeXmlComments(xmlPath);
         });
 
+
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -63,6 +77,7 @@ public class Program
 
         app.UseRouting();
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllerRoute(

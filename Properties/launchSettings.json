@@ -6,7 +6,9 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "HTTP_PROXY": "http://10.254.49.150:3128",
         "HTTPS_PROXY": "http://10.254.49.150:3128",
-        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by"
+        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by",
+        "LOGIN": "admin",
+        "PASSWORD": "pass"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:8080"

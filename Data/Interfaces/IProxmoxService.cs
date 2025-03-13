@@ -36,4 +36,6 @@ public interface IProxmoxService
     /// <param name="proxmoxId"> Id of Proxmox Cluster from DB.</param>
     /// <returns></returns>
     public Task<List<ProxmoxResourcesDTO>> GetProxmoxStoragesAsync(int proxmoxId);
+
+    public Task<List<string>> GetProxmoxVLANTags(int proxmoxId);
 }
