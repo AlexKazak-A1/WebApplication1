@@ -1,14 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 using WebApplication1.Models;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using WebApplication1.Data.WEB;
-using WebApplication1.Data.Interfaces;
-using WebApplication1.Data.Enums;
-using WebApplication1.Data.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 
 namespace WebApplication1.Controllers;
 
@@ -27,8 +20,10 @@ public class RancherController : Controller
         return View(new CombinedModel());
     }
 
-    public IActionResult AddNewRancher()
+    public async Task<IActionResult> AddNewRancher()
     {
+        var accessToken = await HttpContext.GetTokenAsync("access_token");
+        ViewBag.AccessToken = accessToken;
         return View();
     }    
 }

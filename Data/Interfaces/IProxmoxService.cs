@@ -38,4 +38,8 @@ public interface IProxmoxService
     public Task<List<ProxmoxResourcesDTO>> GetProxmoxStoragesAsync(int proxmoxId);
 
     public Task<List<string>> GetProxmoxVLANTags(int proxmoxId);
+
+    public Task<VmInfoDTO> GetVmInfoAsync(int proxmoxId, int templateId);
+
+    public Task<List<ProxmoxResourcesDTO>> GetProxmoxResources(int proxmoxId);
 }

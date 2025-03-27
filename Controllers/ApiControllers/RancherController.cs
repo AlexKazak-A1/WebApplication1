@@ -1,15 +1,15 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data.Database;
 using WebApplication1.Data.Enums;
 using WebApplication1.Data.Interfaces;
-using WebApplication1.Data.RancherDTO;
-using WebApplication1.Data.Services;
 using WebApplication1.Data.WEB;
 using WebApplication1.Models;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
+//[Authorize(AuthenticationSchemes = "Bearer")]
 [Route("api/[controller]/[action]")]
 [ApiController]
 public class RancherController : ControllerBase

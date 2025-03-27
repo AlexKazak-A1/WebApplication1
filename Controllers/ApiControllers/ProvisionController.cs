@@ -1,14 +1,16 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data.Enums;
 using WebApplication1.Data.Interfaces;
 using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.RancherDTO;
 using WebApplication1.Data.WEB;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
+//[Authorize(AuthenticationSchemes = "Bearer")]
 [Route("api/[controller]/[action]")]
 [ApiController]
 public class ProvisionController : ControllerBase
@@ -29,6 +31,7 @@ public class ProvisionController : ControllerBase
     /// <returns>Returns Json that contains List of creds of specified type</returns>
     /// <response code="200">If Creds available.</response>
     /// <response code="500">If an exception is thrown or some validation errors.</response>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpPost]
     public async Task<IActionResult> GetConnectionCreds([FromBody] ConnectionTypeDTO connectionTarget)
     {

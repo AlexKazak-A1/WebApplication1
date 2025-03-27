@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -14,10 +15,16 @@ public class AccountController : Controller
         _configuration = configuration;
     }
 
+    //[HttpGet]
+    //public IActionResult Login()
+    //{
+    //    return View();
+    //}
+
     [HttpGet]
     public IActionResult Login()
     {
-        return View();
+        return Challenge(new AuthenticationProperties { RedirectUri = "/" }, OpenIdConnectDefaults.AuthenticationScheme);
     }
 
     [HttpPost]

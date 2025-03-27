@@ -27,7 +27,7 @@ public class ProvisionService : IProvisionService
         _configuration = configuration;
     }
 
-    public async Task<JsonResult> GetConnectionCreds([FromBody] ConnectionType connectionTarget)
+    public async Task<JsonResult> GetConnectionCreds(ConnectionType connectionTarget)
     {
         try
         {
@@ -45,7 +45,7 @@ public class ProvisionService : IProvisionService
         }
     }
 
-    public async Task<JsonResult> CreateClaster([FromBody] CreateClusterDTO param)
+    public async Task<JsonResult> CreateClaster(CreateClusterDTO param)
     {
         if (param == null)
         {
@@ -70,7 +70,7 @@ public class ProvisionService : IProvisionService
         }
     }
 
-    public async Task<JsonResult> CreateProxmoxVMs([FromBody] CreateVMsDTO param)
+    public async Task<JsonResult> CreateProxmoxVMs(CreateVMsDTO param)
     {
         try
         {
@@ -112,7 +112,7 @@ public class ProvisionService : IProvisionService
         }
     }
 
-    public async Task<JsonResult> GetConnectionStringToRancher([FromBody] CreateClusterDTO clusterInfo)
+    public async Task<JsonResult> GetConnectionStringToRancher(CreateClusterDTO clusterInfo)
     {
         if (clusterInfo == null)
         {
@@ -130,7 +130,7 @@ public class ProvisionService : IProvisionService
         }
     }
 
-    public async Task<JsonResult> StartVMAndConnectToRancher([FromBody] ConnectVmToRancherDTO data)
+    public async Task<JsonResult> StartVMAndConnectToRancher(ConnectVmToRancherDTO data)
     {
         if (data == null)
         {

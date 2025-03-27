@@ -22,6 +22,43 @@
             <response code="200">If such Proxmox URL is accessible.</response>
             <response code="500">If an exception is thrown.</response>
         </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.CreateClusterLazy(WebApplication1.Data.Jira.JiraCreateClusterRequestDTO)">
+            <summary>
+            Initialize proccess of creating New RKE2 cluster on Proxmox
+            </summary>
+            <param name="data">Info for creating cluster</param>    
+            <returns>Returns UID od started proccess</returns>
+            <response code="200">Returns UID of creation Task</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.GetCreationTaskStatus(System.Guid)">
+            <summary>
+            Returns info about task.
+            </summary>
+            <param name="id">UID of Task for RKE2 cluster creation</param>
+            <returns>Returns info abouf task</returns>
+            <response code="200">Returns Task Status</response>
+            <response code="400">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.InfoCluster(System.Int32)">
+            <summary>
+            Gets all info about Proxmox cluster/host
+            </summary>
+            <param name="proxmoxId">Id of Proxmox from DB</param>
+            <returns>Returns all info about Proxmox cluster/host</returns>
+            <response code="200">Returns all info about Proxmox cluster/host</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.GetVMInfo(System.Int32,System.Int32)">
+            <summary>
+            Gets Info about Proxmox VM in Proxmox cluster/host
+            </summary>
+            <param name="proxmoxId">id of Proxmox from DB</param>
+            <param name="vmId">Id of VM in Proxmox</param>
+            <returns>Returls info about VM in Proxmox</returns>
+            <response code="200">Returns all info about Proxmox cluster/host</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
         <member name="M:WebApplication1.Controllers.ApiControllers.ProvisionController.GetConnectionCreds(WebApplication1.Data.WEB.ConnectionTypeDTO)">
             <summary>
             Search all connections of specified type in DB
@@ -453,6 +490,13 @@
             <param name="proxmoxId"></param>
             <returns></returns>
             <exception cref="T:System.Exception">Check this Method</exception>
+        </member>
+        <member name="M:WebApplication1.Data.Services.ProxmoxService.GetProxmoxResources(System.Int32)">
+            <summary>
+            Crerates a List of all Proxmox Cluster/Host resources
+            </summary>
+            <param name="proxmoxId"></param>
+            <returns>Returns Liat Of ProxmoxResourcesDTO</returns>
         </member>
         <member name="M:WebApplication1.Data.Services.ProxmoxService.GetProxmoxVLANTags(System.Int32)">
             <summary>

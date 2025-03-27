@@ -12,9 +12,12 @@ using WebApplication1.Data.ProxmoxDTO;
 using WebApplication1.Data.Services;
 using WebApplication1.Data.WEB;
 using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
+//[Authorize(AuthenticationSchemes = "Bearer")]
 [ApiController]
 [Route("api/[controller]/[action]")]
 public class ProxmoxController : ControllerBase
@@ -35,6 +38,7 @@ public class ProxmoxController : ControllerBase
     /// <returns>Returns Json object with SelectOptionDTO(Value = string, Text = string).</returns>
     /// <response code="200">If DB is accecible. Selects all available data</response>
     /// <response code="500">If an exception is thrown.</response>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpPost]
     public async Task<IActionResult> GetTemplate([FromBody] ProxmoxIdDTO data)
     {

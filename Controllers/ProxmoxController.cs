@@ -1,16 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.Globalization;
-using WebApplication1.Data.Enums;
-using WebApplication1.Data.Interfaces;
-using WebApplication1.Data.ProxmoxDTO;
-using WebApplication1.Data.WEB;
 using WebApplication1.Models;
-using WebApplication1.Data.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 
 namespace WebApplication1.Controllers;
 
@@ -29,8 +20,10 @@ public class ProxmoxController : Controller
         return View(new ProxmoxModel());
     }
 
-    public IActionResult AddNewProxmox()
+    public async Task<IActionResult> AddNewProxmox()
     {
+        var accessToken = await HttpContext.GetTokenAsync("access_token");
+        ViewBag.AccessToken = accessToken;
         return View(); 
     }    
 }

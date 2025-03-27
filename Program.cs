@@ -1,10 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Models;
 using WebApplication1.Data.Database;
 using WebApplication1.Data.Interfaces;
 using WebApplication1.Data.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 
 namespace WebApplication1;
 
@@ -15,16 +19,17 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Настройки аутентификации с таймаутом 30 минут
-        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
-            {
-                options.LoginPath = "/Account/Login"; // Перенаправление на страницу авторизации
-                options.AccessDeniedPath = "/Account/Login"; // Если нет доступа, также редирект на Login
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Таймаут авторизации
-                options.SlidingExpiration = true; // Обновляет таймер при активности
-            });
+        //builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        //    .AddCookie(options =>
+        //    {
+        //        options.LoginPath = "/Account/Login"; // Перенаправление на страницу авторизации
+        //        options.AccessDeniedPath = "/Account/Login"; // Если нет доступа, также редирект на Login
+        //        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Таймаут авторизации
+        //        options.SlidingExpiration = true; // Обновляет таймер при активности
+        //    });
+        
 
-        builder.Services.AddAuthorization();
+
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
@@ -45,6 +50,48 @@ public class Program
         builder.Services.AddScoped<IRancherService, RancherService>();
         builder.Services.AddScoped<IConnectionService, ConnectionService>();
         builder.Services.AddScoped<IProvisionService, ProvisionService>();
+        builder.Services.AddScoped<IJiraService, JiraService>();
+
+        // adding JWT Auth
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = "oidc";
+        })
+        .AddCookie()
+        .AddOpenIdConnect("oidc", options =>
+        {
+            //options.RequireHttpsMetadata = false;
+            options.Authority = builder.Configuration.GetValue<string>("DEX_URL"); ;
+            options.ClientId = builder.Configuration.GetValue<string>("DEX_CLIENT_ID");
+            options.ClientSecret = builder.Configuration.GetValue<string>("DEX_CLIENT_SECRET");            
+
+            options.ResponseType = "code";
+            options.SaveTokens = true;
+            options.Scope.Add("openid");
+            options.Scope.Add("email");
+            options.Scope.Add("profile");
+            //options.Scope.Add("offline_access");
+        })
+        .AddJwtBearer(options =>
+        {
+            //options.RequireHttpsMetadata = false;
+            options.Authority = builder.Configuration.GetValue<string>("DEX_URL"); // Dex issuer URL
+            options.Audience = builder.Configuration.GetValue<string>("DEX_CLIENT_ID"); // Must match Dex client ID
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                SaveSigninToken = true
+
+                // You can add more customization if needed
+            };
+        });
+
+        builder.Services.AddAuthorization();
 
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
@@ -56,9 +103,34 @@ public class Program
 
             var xmlPath = Path.Combine(basePath, "RancherToProxmoxAPI.xml");
             c.IncludeXmlComments(xmlPath);
+
+            // Добавляем поддержку авторизации через Bearer
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                In = ParameterLocation.Header,
+                Description = "Введите токен в формате: Bearer {token}",
+                Name = "Authorization",
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
         });
 
-
+        //IdentityModelEventSource.ShowPII = true;
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.

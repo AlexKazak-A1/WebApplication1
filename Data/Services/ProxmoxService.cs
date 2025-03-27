@@ -457,6 +457,26 @@ public class ProxmoxService : IProxmoxService
     {
         try
         {
+            var resources = await GetProxmoxResources(proxmoxId);
+
+            return resources.Where(x => x.Type == "storage").ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message + "\n" + ex.InnerException?.Message);
+            return new List<ProxmoxResourcesDTO>();
+        }
+    }
+
+    /// <summary>
+    /// Crerates a List of all Proxmox Cluster/Host resources
+    /// </summary>
+    /// <param name="proxmoxId"></param>
+    /// <returns>Returns Liat Of ProxmoxResourcesDTO</returns>
+    public async Task<List<ProxmoxResourcesDTO>> GetProxmoxResources(int proxmoxId)
+    {
+        try
+        {
             var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
             var currentProxmox = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
 
@@ -477,7 +497,7 @@ public class ProxmoxService : IProxmoxService
 
 
 
-            return resources.Where(x => x.Type == "storage").ToList();
+            return resources.ToList();
         }
         catch (Exception ex)
         {
@@ -514,6 +534,35 @@ public class ProxmoxService : IProxmoxService
 
         var result = netList.Where(x => x.VlanId != null).Select(x => new string(x.VlanId)).Distinct().ToList();
         return  result ?? new List<string>();
+    }
+
+    public async Task<VmInfoDTO> GetVmInfoAsync(int proxmoxId, int templateId)
+    {
+        var nodesList = await GetProxmoxNodesListAsync(proxmoxId);
+        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
+        var proxmoxConn = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
+
+        foreach (var node in nodesList.Select(x => x.Node))
+        {
+            var response = await SendRequestToProxmoxAsync($"{proxmoxConn.ProxmoxURL}/api2/json/nodes/{node}/qemu", HttpMethod.Get, proxmoxConn.ProxmoxToken);
+
+
+            if (response != null && response.Data is JArray jArray)
+            {
+                var qemuList = jArray.ToObject<List<VmInfoDTO>>();
+
+                var info = qemuList.FirstOrDefault(x => x.VmId == templateId);
+
+                if (info == null)
+                {
+                    continue;
+                }
+
+                return info;
+            }
+        }
+
+        return new VmInfoDTO();
     }
 
     private async Task<NodeOversubscriptionDTO> CountOversubscription(ProxmoxModel currentProx, string nodeName, double cpuLimit)
@@ -584,6 +633,12 @@ public class ProxmoxService : IProxmoxService
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Authorization", token);
 
             var response = await httpClient.SendAsync(request);
+            if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError && response.ReasonPhrase.Contains("pid"))
+            {
+                _logger.LogError(request.RequestUri + "\n" + response.ReasonPhrase);
+                //throw new Exception(await response.Content.ReadAsStringAsync());
+            }
+
             var result = await response.Content.ReadAsStringAsync();
 
             //_logger.LogInformation($"{url}\n{result}");
@@ -919,35 +974,6 @@ public class ProxmoxService : IProxmoxService
         return vmReady;
     }
 
-    private async Task<VmInfoDTO> GetVmInfoAsync(int proxmoxId, int templateId)
-    {
-        var nodesList = await GetProxmoxNodesListAsync(proxmoxId);
-        var proxmoxes = await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>;
-        var proxmoxConn = proxmoxes?.Where(x => x.Id == proxmoxId).FirstOrDefault();
-
-        foreach (var node in nodesList.Select(x => x.Node))
-        {
-            var response = await SendRequestToProxmoxAsync($"{proxmoxConn.ProxmoxURL}/api2/json/nodes/{node}/qemu", HttpMethod.Get, proxmoxConn.ProxmoxToken);
-
-            
-            if (response != null && response.Data is JArray jArray)
-            {
-                var qemuList = jArray.ToObject<List<VmInfoDTO>>();
-
-                var info = qemuList.FirstOrDefault(x => x.VmId == templateId);
-
-                if (info == null)
-                {
-                    continue;
-                }
-
-                return info;                
-            }
-        }
-
-        return new VmInfoDTO();
-    }
-
     private double FormatBytes(long bytes)
     {
         const long OneKB = 1024;
@@ -1072,7 +1098,7 @@ public class ProxmoxService : IProxmoxService
                 }
                 else if (res != null && res.Exited && res.ExitCode == 100)
                 {
-                    if (res.OutPut.Contains("Something wicked happened resolving"))
+                    if (res.OutPut != null && res.OutPut.Contains("Something wicked happened resolving"))
                     {
                         return false;
                     }

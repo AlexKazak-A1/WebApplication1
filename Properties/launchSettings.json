@@ -6,9 +6,12 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "HTTP_PROXY": "http://10.254.49.150:3128",
         "HTTPS_PROXY": "http://10.254.49.150:3128",
-        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by",
+        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by,localhost",
         "LOGIN": "admin",
-        "PASSWORD": "pass"
+        "PASSWORD": "pass",
+        "DEX_URL": "http://localhost:5556",
+        "DEX_CLIENT_ID": "autodeploy",
+        "DEX_CLIENT_SECRET": "HUFHV3487Y534275YCM3895VYNYV34M7V5Y342N5Y43MC5267234YV5723"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:8080"
@@ -29,11 +32,10 @@
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        //"ASPNETCORE_HTTPS_PORTS": "8081",
         "ASPNETCORE_HTTP_PORTS": "8080",
         "HTTP_PROXY": "http://10.254.49.150:3128",
         "HTTPS_PROXY": "http://10.254.49.150:3128",
-        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by"
+        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by,localhost"
       },
       "publishAllPorts": true,
       "useSSL": true

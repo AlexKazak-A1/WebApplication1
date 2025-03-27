@@ -13,7 +13,6 @@ if (parts.length > 3) {
     baseURL = parts[0] + '//' + parts[2] + '/';
 }
 
-
 function showNotification(status, message) {
 
     // Create a new notification element
@@ -56,7 +55,8 @@ async function postToController(url, data) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'accept' : '*/*'
+                'accept': '*/*',
+                'Authorization': `Bearer ${accessToken}`
             },
             body: JSON.stringify(data)
         });
@@ -81,7 +81,8 @@ async function getTemplates(url, selectTemplate, payload) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json', // Specify JSON content type
-            'accept': '*/*'
+            'accept': '*/*',
+            'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(payload), // Convert the payload to a JSON string
         

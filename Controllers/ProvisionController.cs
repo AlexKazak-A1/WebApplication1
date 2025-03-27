@@ -1,17 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Collections;
-using System.Text;
-using System.Text.Json.Nodes;
-using WebApplication1.Data.Enums;
-using WebApplication1.Data.Interfaces;
-using WebApplication1.Data.ProxmoxDTO;
-using WebApplication1.Data.RancherDTO;
-using WebApplication1.Data.Services;
-using WebApplication1.Data.WEB;
-using WebApplication1.Models;
 
 namespace WebApplication1.Controllers;
 
@@ -25,8 +14,10 @@ public class ProvisionController : Controller
         _logger = logger;        
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        var accessToken = await HttpContext.GetTokenAsync("access_token");
+        ViewBag.AccessToken = accessToken;
         return View();
     }
 

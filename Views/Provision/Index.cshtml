@@ -77,6 +77,9 @@
 </div>
 
 <script>
+
+    const accessToken = '@ViewBag.AccessToken';
+
     const workerInput = document.getElementById('workerNumber');
     workerInput.addEventListener('input', function (event) {
         clearTimeout(timer);
@@ -410,6 +413,7 @@
                 selectedVlan: selectedVlanTag,
             }
 
+            console.log(data);
             let isCreationAvailable = await GetCreationAvailibility(data);      
             
             if (!isCreationAvailable.status)
