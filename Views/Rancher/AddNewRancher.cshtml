@@ -19,6 +19,10 @@
                 <label for="tokenRancher">Token:</label>
                 <input type="text" id="tokenRancher" name="tokenRancher" asp-for="RancherToken" required />
             </div>
+            <div>
+                <label for="uniqueRancherName">Unique Rancher Name:</label>
+                <input type="text" id="uniqueRancherName" name="uniqueRancherName" asp-for="RancherUniqueName" required />
+            </div>
             
             <div>
                 <button type="button" style="margin-top:10px" id="checkRancherButton" onclick="checkRancherConn()">Check URL</button>
@@ -33,21 +37,24 @@
 
 </div>
 
+@section Scripts {
 <script>
 
-    const accessToken = '@ViewBag.AccessToken';
+        const accessToken = document.querySelector('meta[name="access-token"]').getAttribute('content');
 
     let addNewRancher = document.getElementById('addNewRancher');
-    let checkRancherButton = document.getElementById('ckeckRancherButton');
+    let checkRancherButton = document.getElementById('checkRancherButton');
 
     let rancher_URL = '';
     let rancher_Token = '';
+    let uniqueName;
     let isRancherChecked = false;
 
     // Rancher availability check
     function checkRancherConn() {
         const url = $('#urlRancher').val();
         const tokenRancher = $('#tokenRancher').val();
+        const uniqueRancherName = $('#uniqueRancherName').val();
         const button = $('#checkRancherButton');
 
         isRancherChecked = false;
@@ -65,6 +72,7 @@
                     isRancherChecked = true;
                     rancher_URL = url;
                     rancher_Token = tokenRancher;
+                    uniqueName = uniqueRancherName;
                     enableAddNewRancherButton();
                     //saveToCookies('proxmoxUrl', urlValue);
                     //saveToCookies('proxmoxToken', 'PVEAPIToken=' + usernameValue + '!' + tokenIDValue + '=' + tokenSecValue)
@@ -99,6 +107,7 @@
         const data = {
             rancherurl: rancher_URL,
             ranchertoken: rancher_Token,
+            RancherUniqueName: uniqueName
         }
 
         postToController(url,data)
@@ -123,3 +132,4 @@
         });
     }
 </script>
+}

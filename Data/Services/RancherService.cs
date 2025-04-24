@@ -119,6 +119,58 @@ public class RancherService : IRancherService
 
     }
 
+    public async Task<int> GetRancherCred(string uniqueRancherName)
+    {
+        if (!await _dbWorker.CheckDBConnection())
+        {
+            return -1;
+        }
+
+        var rancher = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Rancher) as List<RancherModel>).Where(x => x.RancherUniqueName == uniqueRancherName).FirstOrDefault();
+        if ( rancher != null)
+        {
+            return rancher.Id;
+        }
+        
+        return -1;
+    }
+
+    public async Task<List<RancherModel>> GetAllRancher()
+    {
+        if (!await _dbWorker.CheckDBConnection())
+        {
+            throw new NullReferenceException();
+        }
+
+        var allRancher = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Rancher)) as List<RancherModel>;
+
+        return allRancher ?? new List<RancherModel>();
+    }
+
+    public async Task<bool> UpdateRancher([FromBody] RancherReconfigDTO reconfig)
+    {
+        if (!await _dbWorker.CheckDBConnection())
+        {
+            throw new NullReferenceException();
+        }
+
+        var currentRancher = ((await _dbWorker.GetConnectionCredsAsync(ConnectionType.Rancher)) as List<RancherModel>).Where(x => x.Id == reconfig.Id).FirstOrDefault();
+
+        if (currentRancher == null)
+        {
+            return false;
+        }
+
+        currentRancher.RancherUniqueName = reconfig.UniqueRancherName;
+
+        if (await _dbWorker.Update(currentRancher))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private async Task<string> GetCurrentClusterID(string url, string token, string clusterName)
     {
         url += "/v1/provisioning.cattle.io.clusters?exclude=metadata.managedFields";

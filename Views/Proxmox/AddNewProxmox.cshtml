@@ -27,6 +27,11 @@
                 <label for="tockenSecretProxmox">Token Secret:</label>
                 <input type="text" id="tokenSecretProxmox" name="tokenSecretProxmox" required />
             </div>
+            <div>
+                <label for="uniqueProxmoxName">Unique Proxmox Name:</label>
+                <input type="text" id="uniqueProxmoxName" name="uniqueProxmoxName" required />
+            </div>
+
                      
             <div>
                 <button type="button" style="margin-top:10px" id="checkProxmoxButton" onclick="checkProxmoxConn()">Check URL</button>
@@ -50,6 +55,7 @@
 
     let proxmox_URL = '';
     let proxmox_Token = '';
+    let proxmox_unique_name = '';
     let isProxmoxChecked = false;
 
     // Makes addButton clickable
@@ -67,6 +73,7 @@
         const data = {
             proxmoxurl: proxmox_URL,
             proxmoxtoken: proxmox_Token,
+            proxmoxuniquename: proxmox_unique_name,
         }
 
         postToController(url, data)
@@ -98,6 +105,7 @@
         const usernameValue = $('#usernameProxmox').val();
         const tokenIDValue = $('#tokenIDProxmox').val();
         const tokenSecValue = $('#tokenSecretProxmox').val();
+        const uniqueName = $('#uniqueProxmoxName').val();
         const button = $('#checkProxmoxButton');
 
         isProxmoxChecked = false;
@@ -115,6 +123,7 @@
                     isProxmoxChecked = true;
                     proxmox_URL = urlValue;
                     proxmox_Token = 'PVEAPIToken=' + usernameValue + '!' + tokenIDValue + '=' + tokenSecValue;
+                    proxmox_unique_name = uniqueName;
                     enableAddNewProxmoxButton();                    
                 } else {
                     button.html('<p style="color: red; text-align: center">URL is not accessible</p>');

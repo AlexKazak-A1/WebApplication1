@@ -9,11 +9,16 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Security.Authentication;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
 
 namespace WebApplication1;
 
 public class Program
 {
+    [Obsolete]
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -27,8 +32,9 @@ public class Program
         //        options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Таймаут авторизации
         //        options.SlidingExpiration = true; // Обновляет таймер при активности
         //    });
-        
 
+        // Включаем Newtonsoft.Json для Npgsql (jsonb)
+        NpgsqlConnection.GlobalTypeMapper.UseJsonNet();
 
 
         // Add services to the container.
@@ -37,8 +43,18 @@ public class Program
         builder.Configuration.AddEnvironmentVariables();
 
         // Add DBContext to conect to DB.
+        //builder.Services.AddDbContextFactory<MainDBContext>(options =>
+        //    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Scoped);
+
+        var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+        ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
         builder.Services.AddDbContextFactory<MainDBContext>(options =>
-            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Scoped);
+        options.UseNpgsql(connectionString), ServiceLifetime.Scoped);
+
+        //builder.Services.AddDbContextFactory<MainDBContext>(options =>
+        //    options.UseNpgsql("Host=localhost;Port=5432;Database=k8sapi;Username=apiuser;Password=yourStrongPassword123"), ServiceLifetime.Scoped);
+
         //builder.Services.AddDbContext<MainDBContext>(options => 
         //    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient, ServiceLifetime.Transient);      
 
@@ -52,6 +68,22 @@ public class Program
         builder.Services.AddScoped<IProvisionService, ProvisionService>();
         builder.Services.AddScoped<IJiraService, JiraService>();
 
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            //options.ListenAnyIP(8080); // HTTP
+
+            //options.ListenAnyIP(8081, listenOptions =>
+            //{
+            //    listenOptions.UseHttps("/app/cert/tls.pfx", "");
+            //});
+
+            options.ConfigureHttpsDefaults(httpsOptions =>
+            {
+                httpsOptions.SslProtocols = SslProtocols.Tls12;
+                httpsOptions.SslProtocols = SslProtocols.Tls13;
+            });
+        });
+
         // adding JWT Auth
         builder.Services.AddAuthentication(options =>
         {
@@ -61,7 +93,7 @@ public class Program
         .AddCookie()
         .AddOpenIdConnect("oidc", options =>
         {
-            //options.RequireHttpsMetadata = false;
+            options.RequireHttpsMetadata = false;
             options.Authority = builder.Configuration.GetValue<string>("DEX_URL"); ;
             options.ClientId = builder.Configuration.GetValue<string>("DEX_CLIENT_ID");
             options.ClientSecret = builder.Configuration.GetValue<string>("DEX_CLIENT_SECRET");            
@@ -75,7 +107,7 @@ public class Program
         })
         .AddJwtBearer(options =>
         {
-            //options.RequireHttpsMetadata = false;
+            options.RequireHttpsMetadata = false;
             options.Authority = builder.Configuration.GetValue<string>("DEX_URL"); // Dex issuer URL
             options.Audience = builder.Configuration.GetValue<string>("DEX_CLIENT_ID"); // Must match Dex client ID
             options.SaveToken = true;
@@ -108,7 +140,7 @@ public class Program
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 In = ParameterLocation.Header,
-                Description = "Введите токен в формате: Bearer {token}",
+                Description = "Insert toket in format: Bearer {token}",
                 Name = "Authorization",
                 Type = SecuritySchemeType.ApiKey,
                 Scheme = "Bearer"
@@ -130,7 +162,7 @@ public class Program
             });
         });
 
-        //IdentityModelEventSource.ShowPII = true;
+        IdentityModelEventSource.ShowPII = true;
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
@@ -144,8 +176,15 @@ public class Program
         //app.UseHttpsRedirection();
         app.UseStaticFiles();
 
-        
-        
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        };
+        forwardedHeadersOptions.KnownNetworks.Clear(); // иначе блокирует из-за неизвестной подсети
+        forwardedHeadersOptions.KnownProxies.Clear();  // аналогично
+
+        app.UseForwardedHeaders(forwardedHeadersOptions);
+
 
         app.UseRouting();
 

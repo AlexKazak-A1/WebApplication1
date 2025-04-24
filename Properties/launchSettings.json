@@ -11,7 +11,13 @@
         "PASSWORD": "pass",
         "DEX_URL": "http://localhost:5556",
         "DEX_CLIENT_ID": "autodeploy",
-        "DEX_CLIENT_SECRET": "HUFHV3487Y534275YCM3895VYNYV34M7V5Y342N5Y43MC5267234YV5723"
+        "DEX_CLIENT_SECRET": "HUFHV3487Y534275YCM3895VYNYV34M7V5Y342N5Y43MC5267234YV5723",
+        "DB_HOST": "localhost",
+        "DB_PORT": "5432",
+        "DB_NAME": "k8sapi",
+        "DB_USER": "apiuser",
+        "DB_PASSWORD": "yourStrongPassword123",
+        "DB_CONNECTION_STRING": "Host=localhost;Port=5432;Database=k8sapi;Username=apiuser;Password=yourStrongPassword123"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:8080"
@@ -22,10 +28,15 @@
     //    "ASPNETCORE_ENVIRONMENT": "Development",
     //    "HTTP_PROXY": "http://10.254.49.150:3128",
     //    "HTTPS_PROXY": "http://10.254.49.150:3128",
-    //    "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by"
+    //    "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by,localhost",
+    //    "LOGIN": "admin",
+    //    "PASSWORD": "pass",
+    //    "DEX_URL": "https://ldap-dex-k8s-proxmox-api.a1by.tech",
+    //    "DEX_CLIENT_ID": "autodeploy",
+    //    "DEX_CLIENT_SECRET": "HUFHV3487Y534275YCM3895VYNYV34M7V5Y342N5Y43MC5267234YV5723"
     //  },
     //  "dotnetRunMessages": true,
-    //  "applicationUrl": "https://localhost:8081;http://localhost:8080"
+    //  "applicationUrl": "http://localhost:8080"//; http://localhost:8080"
     //},
     "Container (Dockerfile)": {
       "commandName": "Docker",
@@ -33,9 +44,13 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_HTTP_PORTS": "8080",
+        //"ASPNETCORE_HTTPS_PORTS": "8081",
         "HTTP_PROXY": "http://10.254.49.150:3128",
         "HTTPS_PROXY": "http://10.254.49.150:3128",
-        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by,localhost"
+        "NO_PROXY": "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local,rancher.a1by.tech,.main.velcom.by,localhost",
+        "DEX_URL": "https://ldap-dex-k8s-proxmox-api.a1by.tech",
+        "DEX_CLIENT_ID": "autodeploy",
+        "DEX_CLIENT_SECRET": "HUFHV3487Y534275YCM3895VYNYV34M7V5Y342N5Y43MC5267234YV5723"
       },
       "publishAllPorts": true,
       "useSSL": true

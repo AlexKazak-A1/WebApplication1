@@ -8,10 +8,11 @@ using WebApplication1.Data.WEB;
 using WebApplication1.Data.Jira;
 using WebApplication1.Data;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
-//[Authorize(AuthenticationSchemes = "Bearer")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [Route("api/[controller]/[action]")]
 [ApiController]
 public class JiraController : ControllerBase

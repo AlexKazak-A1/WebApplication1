@@ -22,4 +22,9 @@ public class RancherModel
     /// Secret of current Rancher user token
     /// </summary>
     public string RancherToken { get; set; }
+
+    /// <summary>
+    /// Unique Rancher name that must be the same for CMDB and Jira(Used as id)
+    /// </summary>
+    public string RancherUniqueName { get; set; }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data.ProxmoxDTO;
+using WebApplication1.Data.WEB;
 using WebApplication1.Models;
 
 namespace WebApplication1.Data.Interfaces;
@@ -42,4 +43,12 @@ public interface IProxmoxService
     public Task<VmInfoDTO> GetVmInfoAsync(int proxmoxId, int templateId);
 
     public Task<List<ProxmoxResourcesDTO>> GetProxmoxResources(int proxmoxId);
+
+    public Task<List<ProxmoxModel>> GetAllProxmox();
+
+    public Task<bool> UpdateProxmox([FromBody] ProxmoxDefaultReconfig reconfig);
+
+    public Task<int> GetProxmoxCred(string uniqueProxmoxName);
+
+    public Task<CreateVMsDTO?> SetProxmoxDefaultValues(CreateVMsDTO createVMsDTO, string environment);
 }

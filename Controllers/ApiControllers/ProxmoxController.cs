@@ -14,10 +14,11 @@ using WebApplication1.Data.WEB;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
-//[Authorize(AuthenticationSchemes = "Bearer")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 [Route("api/[controller]/[action]")]
 public class ProxmoxController : ControllerBase
@@ -61,6 +62,7 @@ public class ProxmoxController : ControllerBase
     /// <returns>Returns Json object with TemplateParams(CPU = string, RAM = string, HDD = string).</returns>
     /// <response code="200">If template is available.</response>
     /// <response code="500">If an exception is thrown.</response>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpPost]
     public async Task<IActionResult> GetTemplateParams([FromBody] TemplateIdDTO data)
     {
@@ -82,6 +84,7 @@ public class ProxmoxController : ControllerBase
     /// <returns>Returns JSON object with Responce(Status = int, Message = string).</returns>
     /// <response code="200">If creds was added correctly.</response>
     /// <response code="500">If an exception is thrown or some validation errors.</response>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [HttpPost]
     public async Task<IActionResult> CreateNewProxmoxCred([FromBody] ProxmoxModel model)
     {
@@ -103,6 +106,7 @@ public class ProxmoxController : ControllerBase
     /// <returns>List of Proxmox host names.</returns>
     /// <response code="200">If Proxmox available.</response>
     /// <response code="500">If an exception is thrown or some validation errors.</response>
+    
     [HttpPost]
     public async Task<IActionResult> GetProxmoxHosts([FromBody] ProxmoxIdDTO data)
     {
@@ -158,4 +162,40 @@ public class ProxmoxController : ControllerBase
             return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetProxmoxVLANTags)} in {nameof(ProxmoxController)}" }));
         }
     }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateProxmox([FromBody] ProxmoxDefaultReconfig reconfig)
+    {
+        try
+        {
+            var result = await _proxmoxService.UpdateProxmox(reconfig);
+            return Ok(new JsonResult(result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(UpdateProxmox)} in {nameof(ProxmoxController)}" }));
+        }
+    }
+
+    /// <summary>
+    /// Gets all info about Proxmox Connection and Proxmox config from DB
+    /// </summary>
+    /// <returns>Returns List of ProxmoxModel</returns>
+    /// <response code="200">If DB available.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
+    [HttpGet]
+    public async Task<IActionResult> GetAllProxmox()
+    {
+        try
+        {
+            var result = await _proxmoxService.GetAllProxmox();
+            return Ok(new JsonResult(result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetAllProxmox)} in {nameof(ProxmoxController)}" }));
+        }
+    }
+
+    
 }

@@ -78,7 +78,7 @@
 
 <script>
 
-    const accessToken = '@ViewBag.AccessToken';
+    const accessToken = document.querySelector('meta[name="access-token"]').getAttribute('content');
 
     const workerInput = document.getElementById('workerNumber');
     workerInput.addEventListener('input', function (event) {
@@ -456,6 +456,8 @@
 
                 
                 data.provisionSchema = provisioningSchema;
+
+                console.log(data);
                 let vmIDs = await startCreatingProxmoxVMs(data);  //   <--  Remove comment to start proxmox privision
 
                 //if (connString !== '' && vmIDs.length > 0) {

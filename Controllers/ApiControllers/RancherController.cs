@@ -1,15 +1,18 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data.Database;
 using WebApplication1.Data.Enums;
 using WebApplication1.Data.Interfaces;
+using WebApplication1.Data.Services;
 using WebApplication1.Data.WEB;
+using WebApplication1.Data.RancherDTO;
 using WebApplication1.Models;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
-//[Authorize(AuthenticationSchemes = "Bearer")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [Route("api/[controller]/[action]")]
 [ApiController]
 public class RancherController : ControllerBase
@@ -48,5 +51,39 @@ public class RancherController : ControllerBase
             _logger.LogError($"Some error in {nameof(CreateNewRancherCred)}");
             return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Some error in {nameof(CreateNewRancherCred)}" }));
         }
-    }        
+    }
+
+    /// <summary>
+    /// Gets all info about Rancher Connection from DB
+    /// </summary>
+    /// <returns>Returns List of RancherModel</returns>
+    /// <response code="200">If DB available.</response>
+    /// <response code="500">If an exception is thrown or some validation errors.</response>
+    [HttpGet]
+    public async Task<IActionResult> GetAllRancher()
+    {
+        try
+        {
+            var result = await _rancherService.GetAllRancher();
+            return Ok(new JsonResult(result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetAllRancher)} in {nameof(RancherController)}" }));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateRancher([FromBody] RancherReconfigDTO reconfig)
+    {
+        try
+        {
+            var result = await _rancherService.UpdateRancher(reconfig);
+            return Ok(new JsonResult(result));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new JsonResult(new Response { Status = Status.ERROR, Message = $"Check {nameof(GetAllRancher)}  in  {nameof(RancherController)}" }));
+        }
+    }
 }

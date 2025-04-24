@@ -106,4 +106,30 @@ public class DBWorker : IDBService
 
         return "Wrong Connection type";
     }
+
+    public async Task<bool> Update(object model)
+    {
+        try
+        {
+            if (model is ProxmoxModel pModel)
+            {
+                _dbContext.Proxmox.Update(pModel);
+                await _dbContext.SaveChangesAsync();
+                return true;
+            }
+            else if (model is RancherModel rModel)
+            {
+                _dbContext.Rancher.Update(rModel);
+                await _dbContext.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            return false;
+        }
+    }
 }

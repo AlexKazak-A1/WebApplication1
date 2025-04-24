@@ -24,4 +24,14 @@ public class ProxmoxModel
     /// Acsess token in format PVEAPIToken=User!TokenID=secret
     /// </summary>
     public string ProxmoxToken { get; set; }  
+
+    /// <summary>
+    /// Unique name that must be the same as in CMDB & comes from Jira
+    /// </summary>
+    public string ProxmoxUniqueName { get; set; }
+
+    /// <summary>
+    /// Describes default params for Proxmox Cluster/Host
+    /// </summary>
+    public ProxmoxDefaultConfig? DefaultConfig { get; set; }
 }

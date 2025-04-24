@@ -105,7 +105,7 @@ async function getTemplates(url, selectTemplate, payload) {
 
             defaultOption.place
             defaultOption.value = '';
-            defaultOption.textContent = 'Select item';
+            defaultOption.textContent = '-- Select --';
             select.appendChild(defaultOption);
 
             // Extract the array from the "value" property
@@ -141,6 +141,8 @@ async function getTemplates(url, selectTemplate, payload) {
 
         console.error('There was a problem with the fetch operation:', error);
     });    
+
+    //return data;
 }
 
 async function CreateProvisionBlock(baseURL, data) {

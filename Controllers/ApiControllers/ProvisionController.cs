@@ -10,7 +10,7 @@ using WebApplication1.Data.WEB;
 
 namespace WebApplication1.Controllers.ApiControllers;
 
-//[Authorize(AuthenticationSchemes = "Bearer")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [Route("api/[controller]/[action]")]
 [ApiController]
 public class ProvisionController : ControllerBase

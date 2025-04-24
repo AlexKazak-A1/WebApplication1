@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-noble AS base
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
-#EXPOSE 8081
+EXPOSE 8081
 
 
 # This stage is used to build the service project
@@ -27,4 +27,9 @@ RUN dotnet publish "./WebApplication1.csproj" -c $BUILD_CONFIGURATION -o /app/pu
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+#COPY ./tls.crt /app/tls.crt
+#COPY ./tls.key /app/tls.key
+#RUN mkdir /app/cert
+#RUN openssl pkcs12 -export -out /app/cert/tls.pfx -inkey /app/tls.key -in /app/tls.crt -passout pass:
+
 ENTRYPOINT ["dotnet", "WebApplication1.dll"]

@@ -8,4 +8,5 @@ public interface IDBService
 
     public Task<object> GetConnectionCredsAsync(object connectionType);
 
+    public Task<bool> Update(object model);
 }

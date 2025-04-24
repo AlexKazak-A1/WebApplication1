@@ -318,8 +318,14 @@ public class ProxmoxService : IProxmoxService
             return new JsonResult(new Response { Status = Status.ERROR, Message = "Database is unreachable" });
         }
 
+        if (model.DefaultConfig == null)
+        {
+            model.DefaultConfig = new ProxmoxDefaultConfig();
+        }
+
         if (await _dbWorker.AddNewCred(model))
         {
+            
             return new JsonResult(new Response { Status = Status.OK, Message = "New Proxmox Creds was successfully added" });
         }
 
@@ -563,6 +569,94 @@ public class ProxmoxService : IProxmoxService
         }
 
         return new VmInfoDTO();
+    }
+
+    public async Task<List<ProxmoxModel>> GetAllProxmox()
+    {
+        if (!await _dbWorker.CheckDBConnection())
+        {
+            throw new NullReferenceException();
+        }
+
+        var allProxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox)) as List<ProxmoxModel>;
+
+        return allProxmox ?? new List<ProxmoxModel>();
+    }
+
+    public async Task<bool> UpdateProxmox([FromBody] ProxmoxDefaultReconfig reconfig)
+    {
+        if (!await _dbWorker.CheckDBConnection())
+        {
+            throw new NullReferenceException();
+        }
+
+        var currentProxmox = ((await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox)) as List<ProxmoxModel>).Where(x => x.Id == reconfig.Id).FirstOrDefault();
+
+        if (currentProxmox == null)
+        {
+            return false;
+        }
+
+        currentProxmox.DefaultConfig = reconfig.DefaultConfig;
+        currentProxmox.ProxmoxUniqueName = reconfig.UniqueProxmoxName;
+
+        if (await _dbWorker.Update(currentProxmox))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public async Task<int> GetProxmoxCred(string uniqueProxmoxName)
+    {
+        if (!await _dbWorker.CheckDBConnection())
+        {
+            return -1;
+        }
+
+        var rancher = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.ProxmoxUniqueName == uniqueProxmoxName).FirstOrDefault();
+        if (rancher != null)
+        {
+            return rancher.Id;
+        }
+
+        return -1;
+    }
+
+    public async Task<CreateVMsDTO?> SetProxmoxDefaultValues(CreateVMsDTO createVMsDTO, string environment)
+    {
+        var proxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).Where(x => x.Id == createVMsDTO.ProxmoxId).FirstOrDefault();
+
+        if (proxmox == null)
+        {
+            return null;
+        }
+
+        createVMsDTO.ETCDProvisionRange = proxmox.DefaultConfig.EtcdProvisionRange;
+        createVMsDTO.WorkerProvisionRange = proxmox.DefaultConfig.WorkerProvisionRange;
+        createVMsDTO.EtcdAndControlPlaneAmount = proxmox.DefaultConfig.ControlPlaneAmount;
+        createVMsDTO.SelectedStorage = [proxmox.DefaultConfig.SelectedStorage];
+
+        environment = environment.ToUpperInvariant();
+
+        if (string.Equals(environment, "PROD"))
+        {
+            createVMsDTO.SelectedVlan = proxmox.DefaultConfig.VlanProd;
+        }
+        else 
+        {
+            createVMsDTO.SelectedVlan = proxmox.DefaultConfig.VlanTest;
+        }
+
+        createVMsDTO.VMTemplateName = proxmox.DefaultConfig.VmTemplateName;
+        createVMsDTO.etcdConfig = proxmox.DefaultConfig.EtcdConfig;
+
+        var maxVMIdInProxmox = (await GetProxmoxResources(proxmoxId: proxmox.Id)).Max(x => x.VmId);
+        createVMsDTO.VMStartIndex = maxVMIdInProxmox + 1;
+
+
+        return createVMsDTO;
     }
 
     private async Task<NodeOversubscriptionDTO> CountOversubscription(ProxmoxModel currentProx, string nodeName, double cpuLimit)

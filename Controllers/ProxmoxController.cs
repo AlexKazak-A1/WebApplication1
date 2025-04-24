@@ -26,4 +26,11 @@ public class ProxmoxController : Controller
         ViewBag.AccessToken = accessToken;
         return View(); 
     }    
+
+    public async Task<IActionResult> EditProxmox()
+    {
+        var accessToken = await HttpContext.GetTokenAsync("access_token");
+        ViewBag.AccessToken = accessToken;
+        return View();
+    }
 }

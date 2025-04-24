@@ -1,1 +1,12 @@
-﻿<h2>THIS is Proxmox/Index</h2>
+﻿@{
+    ViewData["Title"] = "Proxmox Page";
+}
+
+<form>
+    <div>
+        <button type="submit" id="AddProxmox" asp-controller="Proxmox" asp-action="AddNewProxmox" style="margin-bottom: 10px">Add New Proxmox</button>
+    </div>
+    <div>
+        <button type="submit" id="editProxmox" asp-controller="Proxmox" asp-action="EditProxmox" style="margin-bottom: 10px">Edit Proxmox</button>
+    </div>
+</form>

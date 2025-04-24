@@ -1,0 +1,118 @@
+﻿@{
+    ViewData["Title"] = "Editing Proxmox Page";
+}
+
+<h2>Proxmox Selection</h2>
+
+<div class="mb-3">
+    <label for="proxmoxSelect" class="form-label">Select Proxmox:</label>
+    <select id="proxmoxSelect" class="form-select">
+        <option value="">Loading...</option>
+    </select>
+</div>
+
+<div id="proxmoxDetails" class="mt-4" style="display: none;">
+    <form id="proxmoxForm">
+        <input type="hidden" id="Id" name="Id" />
+
+        <div class="mb-3">
+            <label class="form-label">Unique Proxmox Name:</label>
+            <textarea class="form-control" id="uniqueProxmoxName" name="uniqueProxmoxName" rows="1"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Default configuration (JSON):</label>
+            <textarea class="form-control" id="DefaultConfig" name="DefaultConfig" rows="7"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Save Changes?')">Save</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+
+        const accessToken = document.querySelector('meta[name="access-token"]').getAttribute('content');
+
+        let proxmoxList = [];
+
+         fetch(baseURL + 'api/Proxmox/GetAllProxmox',{
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': '*/*',
+                'Authorization': `Bearer ${accessToken}`
+            }
+         })
+         .then(response => response.json())
+         .then(data => {
+             proxmoxList = data.value;
+         });
+
+        document.getElementById("proxmoxForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            let parsedConfig;
+            let uniqueName;
+            try {
+                parsedConfig = JSON.parse(document.getElementById("DefaultConfig").value);
+                uniqueName = document.getElementById("uniqueProxmoxName").value;
+
+                if (uniqueName === '') {
+                    alert("Unique Name can't be null or empty");
+                    return;
+                }
+            } catch {
+                alert("Invalid JSON in config");
+                return;
+            }
+
+            const payload = {
+                id: parseInt(document.getElementById("Id").value, 10),
+                defaultConfig: parsedConfig,
+                uniqueProxmoxName: uniqueName
+            };
+
+            fetch(baseURL + 'api/Proxmox/UpdateProxmox', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(payload)
+            }).then(resp => {
+                if (resp.ok) {
+                    alert("Saved!");
+                } else {
+                    alert("Failed to save.");
+                }
+            });
+        });
+
+        document.getElementById('proxmoxSelect').addEventListener('change', function () {
+            const selected = proxmoxList.find(p => p.id == this.value);
+            if (!selected) {
+                document.getElementById('proxmoxDetails').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('Id').value = selected.id;
+            document.getElementById('DefaultConfig').value = JSON.stringify(selected.defaultConfig ?? {}, null, 2);
+            document.getElementById('uniqueProxmoxName').value = selected.proxmoxUniqueName;
+
+            document.getElementById('proxmoxDetails').style.display = 'block';
+        });
+
+        window.onload = async () => {
+
+            const ConnectionType = {
+                Rancher: 0,
+                Proxmox: 1
+            };
+
+            await getTemplates(baseURL + 'api/Provision/GetConnectionCreds', 'proxmoxSelect', {connectiontype: ConnectionType.Proxmox});
+        };
+
+    </script>
+}

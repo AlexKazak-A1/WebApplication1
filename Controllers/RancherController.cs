@@ -25,5 +25,13 @@ public class RancherController : Controller
         var accessToken = await HttpContext.GetTokenAsync("access_token");
         ViewBag.AccessToken = accessToken;
         return View();
-    }    
+    }
+
+
+    public async Task<IActionResult> EditRancher()
+    {
+        var accessToken = await HttpContext.GetTokenAsync("access_token");
+        ViewBag.AccessToken = accessToken;
+        return View();
+    }
 }

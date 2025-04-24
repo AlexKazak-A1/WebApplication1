@@ -1,0 +1,109 @@
+﻿@{
+    ViewData["Title"] = "Editing Rancher Page";
+}
+
+<h2>Rancher Selection</h2>
+
+<div class="mb-3">
+    <label for="rancherSelect" class="form-label">Select Rancher:</label>
+    <select id="rancherSelect" class="form-select">
+        <option value="">Loading...</option>
+    </select>
+</div>
+
+<div id="rancherDetails" class="mt-4" style="display: none;">
+    <form id="rancherForm">
+        <input type="hidden" id="Id" name="Id" />
+
+        <div class="mb-3">
+            <label class="form-label">Unique Rancher Name:</label>
+            <textarea class="form-control" id="uniqueRancherName" name="uniqueRancherName" rows="1"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Save Changes?')">Save</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+
+        const accessToken = document.querySelector('meta[name="access-token"]').getAttribute('content');
+
+        let rancherList = [];
+
+         fetch(baseURL + 'api/Rancher/GetAllRancher',{
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': '*/*',
+                'Authorization': `Bearer ${accessToken}`
+            }
+         })
+         .then(response => response.json())
+         .then(data => {
+             rancherList = data.value;
+         });
+
+        document.getElementById("rancherForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            let uniqueName;
+            try {
+                uniqueName = document.getElementById("uniqueRancherName").value;
+
+                if (uniqueName === '') {
+                    alert("Unique Name can't be null or empty");
+                    return;
+                }
+            } catch {
+                alert("Invalid JSON in config");
+                return;
+            }
+
+            const payload = {
+                id: parseInt(document.getElementById("Id").value, 10),
+                uniqueRancherName: uniqueName
+            };
+
+            fetch(baseURL + 'api/Rancher/UpdateRancher', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'accept': '*/*',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(payload)
+            }).then(resp => {
+                if (resp.ok) {
+                    alert("Saved!");
+                } else {
+                    alert("Failed to save.");
+                }
+            });
+        });
+
+        document.getElementById('rancherSelect').addEventListener('change', function () {
+            const selected = rancherList.find(p => p.id == this.value);
+            if (!selected) {
+                document.getElementById('rancherDetails').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('Id').value = selected.id;
+            document.getElementById('uniqueRancherName').value = selected.rancherUniqueName;
+
+            document.getElementById('rancherDetails').style.display = 'block';
+        });
+
+        window.onload = async () => {
+
+            const ConnectionType = {
+                Rancher: 0,
+                Proxmox: 1
+            };
+
+            await getTemplates(baseURL + 'api/Provision/GetConnectionCreds', 'rancherSelect', {connectiontype: ConnectionType.Rancher});
+        };
+
+    </script>
+}

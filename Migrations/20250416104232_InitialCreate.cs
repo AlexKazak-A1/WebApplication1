@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using WebApplication1.Models;
 
 #nullable disable
 
@@ -14,11 +16,11 @@ namespace WebApplication1.Migrations
                 name: "Proxmox",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    ProxmoxURL = table.Column<string>(type: "TEXT", nullable: false),
-                    ProxmoxToken = table.Column<string>(type: "TEXT", nullable: false),
-                    ProxmoxNetTags = table.Column<string>(type: "TEXT", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ProxmoxURL = table.Column<string>(type: "text", nullable: false),
+                    ProxmoxToken = table.Column<string>(type: "text", nullable: false),
+                    DefaultConfig = table.Column<ProxmoxDefaultConfig>(type: "jsonb", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,10 +31,10 @@ namespace WebApplication1.Migrations
                 name: "Rancher",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    RancherURL = table.Column<string>(type: "TEXT", nullable: false),
-                    RancherToken = table.Column<string>(type: "TEXT", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    RancherURL = table.Column<string>(type: "text", nullable: false),
+                    RancherToken = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {

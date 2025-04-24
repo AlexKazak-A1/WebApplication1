@@ -167,6 +167,14 @@
             <response code="200">If Proxmox available.</response>
             <response code="500">If an exception is thrown or some validation errors.</response>
         </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.ProxmoxController.GetAllProxmox">
+            <summary>
+            Gets all info about Proxmox Connection and Proxmox config from DB
+            </summary>
+            <returns>Returns List of ProxmoxModel</returns>
+            <response code="200">If DB available.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
         <member name="M:WebApplication1.Controllers.ApiControllers.RancherController.CreateNewRancherCred(WebApplication1.Models.RancherModel)">
             <summary>
             Creates new Rancher connection creds in DB
@@ -174,6 +182,14 @@
             <param name="model">Model that represents main creds for Rancher connection</param>
             <returns>Returns Json object with Responce(Status = int, Message = string)</returns>
             <response code="200">If such Rancher creds was added correctly.</response>
+            <response code="500">If an exception is thrown or some validation errors.</response>
+        </member>
+        <member name="M:WebApplication1.Controllers.ApiControllers.RancherController.GetAllRancher">
+            <summary>
+            Gets all info about Rancher Connection from DB
+            </summary>
+            <returns>Returns List of RancherModel</returns>
+            <response code="200">If DB available.</response>
             <response code="500">If an exception is thrown or some validation errors.</response>
         </member>
         <member name="M:WebApplication1.Data.Database.DBWorker.GetConnectionCredsAsync(System.Object)">
@@ -610,6 +626,12 @@
             Acsess token in format PVEAPIToken=User!TokenID=secret
             </summary>
         </member>
+        <!-- Badly formed XML comment ignored for member "P:WebApplication1.Models.ProxmoxModel.ProxmoxUniqueName" -->
+        <member name="P:WebApplication1.Models.ProxmoxModel.DefaultConfig">
+            <summary>
+            Describes default params for Proxmox Cluster/Host
+            </summary>
+        </member>
         <member name="T:WebApplication1.Models.RancherModel">
             <summary>
             Describes Rancher for DB
@@ -628,6 +650,11 @@
         <member name="P:WebApplication1.Models.RancherModel.RancherToken">
             <summary>
             Secret of current Rancher user token
+            </summary>
+        </member>
+        <member name="P:WebApplication1.Models.RancherModel.RancherUniqueName">
+            <summary>
+            Unique Rancher name that must be the same for CMDB and Jira(Used as id)
             </summary>
         </member>
         <member name="T:WebApplication1.Models.UrlCheckResponse">
