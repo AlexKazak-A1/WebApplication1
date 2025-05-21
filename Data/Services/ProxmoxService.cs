@@ -512,6 +512,18 @@ public class ProxmoxService : IProxmoxService
         }
     }
 
+    public async Task<List<ProxmoxResourcesDTO>> GetProxmoxResources(string uniqueProxmoxName)
+    {
+        var proxmoxId =await GetProxmoxID(uniqueProxmoxName);
+
+        if (proxmoxId < 0)
+        {
+            return new List<ProxmoxResourcesDTO>();
+        }
+
+        return await GetProxmoxResources(proxmoxId);
+    }
+
     /// <summary>
     /// Gets list of available VLAN tags in Proxmox Cluster/host
     /// </summary>
@@ -569,6 +581,18 @@ public class ProxmoxService : IProxmoxService
         }
 
         return new VmInfoDTO();
+    }
+
+    public async Task<VmInfoDTO> GetVmInfoAsync(string uniqueProxmoxName, int templateId)
+    {
+        var proxmoxId = await GetProxmoxID(uniqueProxmoxName);
+
+        if (proxmoxId < 0)
+        {
+            return new VmInfoDTO();
+        }
+
+        return await GetVmInfoAsync(proxmoxId, templateId);
     }
 
     public async Task<List<ProxmoxModel>> GetAllProxmox()
@@ -688,6 +712,22 @@ public class ProxmoxService : IProxmoxService
         }
 
         return new NodeOversubscriptionDTO { TotalNodeCPU = nodeData!.CPUInfo.CPUs, TotalAllocatedCPUs = totalCpus };        
+    }
+
+    private async Task<int> GetProxmoxID(string uniqueName)
+    {
+        if (string.IsNullOrEmpty(uniqueName))
+        {
+            return -1;
+        }
+        var proxmox = (await _dbWorker.GetConnectionCredsAsync(ConnectionType.Proxmox) as List<ProxmoxModel>).FirstOrDefault(x => x.ProxmoxUniqueName == uniqueName);
+
+        if (proxmox == null)
+        {
+            return -1;
+        }
+
+        return proxmox.Id;
     }
 
     private async Task<ProxmoxResponse> SendRequestToProxmoxAsync(string url, HttpMethod httpMethod, string token, object? data = null)

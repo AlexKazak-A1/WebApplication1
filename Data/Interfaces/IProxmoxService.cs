@@ -42,7 +42,11 @@ public interface IProxmoxService
 
     public Task<VmInfoDTO> GetVmInfoAsync(int proxmoxId, int templateId);
 
+    public Task<VmInfoDTO> GetVmInfoAsync(string proxmoxUniqueName, int templateId);
+
     public Task<List<ProxmoxResourcesDTO>> GetProxmoxResources(int proxmoxId);
+
+    public Task<List<ProxmoxResourcesDTO>> GetProxmoxResources(string uniqueProxmoxName);
 
     public Task<List<ProxmoxModel>> GetAllProxmox();
 

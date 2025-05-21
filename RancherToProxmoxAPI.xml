@@ -40,20 +40,20 @@
             <response code="200">Returns Task Status</response>
             <response code="400">If an exception is thrown or some validation errors.</response>
         </member>
-        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.InfoCluster(System.Int32)">
+        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.InfoCluster(System.String)">
             <summary>
             Gets all info about Proxmox cluster/host
             </summary>
-            <param name="proxmoxId">Id of Proxmox from DB</param>
+            <param name="uniqueProxmoxName">Unique name of Proxmox</param>
             <returns>Returns all info about Proxmox cluster/host</returns>
             <response code="200">Returns all info about Proxmox cluster/host</response>
             <response code="500">If an exception is thrown or some validation errors.</response>
         </member>
-        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.GetVMInfo(System.Int32,System.Int32)">
+        <member name="M:WebApplication1.Controllers.ApiControllers.JiraController.GetVMInfo(System.String,System.Int32)">
             <summary>
             Gets Info about Proxmox VM in Proxmox cluster/host
             </summary>
-            <param name="proxmoxId">id of Proxmox from DB</param>
+            <param name="uniqueProxmoxName">Unique name of Proxmox</param>
             <param name="vmId">Id of VM in Proxmox</param>
             <returns>Returls info about VM in Proxmox</returns>
             <response code="200">Returns all info about Proxmox cluster/host</response>

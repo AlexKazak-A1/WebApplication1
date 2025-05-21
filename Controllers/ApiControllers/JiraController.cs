@@ -84,16 +84,16 @@ public class JiraController : ControllerBase
     /// <summary>
     /// Gets all info about Proxmox cluster/host
     /// </summary>
-    /// <param name="proxmoxId">Id of Proxmox from DB</param>
+    /// <param name="uniqueProxmoxName">Unique name of Proxmox</param>
     /// <returns>Returns all info about Proxmox cluster/host</returns>
     /// <response code="200">Returns all info about Proxmox cluster/host</response>
     /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpGet]
-    public async Task<IActionResult> InfoCluster(int proxmoxId)
+    public async Task<IActionResult> InfoCluster(string uniqueProxmoxName)
     {
         try
         {
-            return Ok((await _jiraService.GetProxmoxInfo(proxmoxId)).Value);
+            return Ok((await _jiraService.GetProxmoxInfo(uniqueProxmoxName)).Value);
         }
         catch (Exception ex)
         {
@@ -105,17 +105,17 @@ public class JiraController : ControllerBase
     /// <summary>
     /// Gets Info about Proxmox VM in Proxmox cluster/host
     /// </summary>
-    /// <param name="proxmoxId">id of Proxmox from DB</param>
+    /// <param name="uniqueProxmoxName">Unique name of Proxmox</param>
     /// <param name="vmId">Id of VM in Proxmox</param>
     /// <returns>Returls info about VM in Proxmox</returns>
     /// <response code="200">Returns all info about Proxmox cluster/host</response>
     /// <response code="500">If an exception is thrown or some validation errors.</response>
     [HttpGet]
-    public async Task<IActionResult> GetVMInfo(int proxmoxId, int vmId)
+    public async Task<IActionResult> GetVMInfo(string uniqueProxmoxName, int vmId)
     {
         try
         {
-            return Ok(await _jiraService.GetVMInfo(proxmoxId, vmId));
+            return Ok(await _jiraService.GetVMInfo(uniqueProxmoxName, vmId));
         }
         catch (Exception ex)
         {

@@ -115,13 +115,13 @@ public class JiraService : IJiraService
         }
     }
 
-    public async Task<JsonResult> GetProxmoxInfo(int proxmoxId)
+    public async Task<JsonResult> GetProxmoxInfo(string proxmoxUniqueName)
     {
-        return new JsonResult(await _proxmoxService.GetProxmoxResources(proxmoxId));
+        return new JsonResult(await _proxmoxService.GetProxmoxResources(proxmoxUniqueName));
     }
 
-    public async Task<VmInfoDTO> GetVMInfo(int proxmoxId, int VMId)
+    public async Task<VmInfoDTO> GetVMInfo(string proxmoxUniqueName, int VMId)
     {
-        return await _proxmoxService.GetVmInfoAsync(proxmoxId, VMId);
+        return await _proxmoxService.GetVmInfoAsync(proxmoxUniqueName, VMId);
     }
 }

@@ -190,6 +190,14 @@ async function CreateProvisionBlock(baseURL, data) {
     container.appendChild(createCheckboxBlock(proxmoxStorageItems, 'storage'));
 }
 
+function deleteAllCookies() {
+    document.cookie.split(";").forEach(function (c) {
+        document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date(0).toUTCString() + ";path=/");
+    });
+}
+
 // Function to get selected checkboxes
 function GetSelectedCheckboxes(boxid) {
     const checkboxes = document.querySelectorAll('#' + boxid + ' input[type="checkbox"]:checked');

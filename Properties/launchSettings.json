@@ -12,12 +12,17 @@
         "DEX_URL": "http://localhost:5556",
         "DEX_CLIENT_ID": "autodeploy",
         "DEX_CLIENT_SECRET": "HUFHV3487Y534275YCM3895VYNYV34M7V5Y342N5Y43MC5267234YV5723",
-        "DB_HOST": "localhost",
+        //"DB_HOST": "localhost",
+        //"DB_PORT": "5432",
+        //"DB_NAME": "k8sapi",
+        //"DB_USER": "apiuser",
+        //"DB_PASSWORD": "yourStrongPassword123"
+        "DB_HOST": "srv-k8sprox-1",
         "DB_PORT": "5432",
-        "DB_NAME": "k8sapi",
+        "DB_NAME": "rancherproxmox",
         "DB_USER": "apiuser",
-        "DB_PASSWORD": "yourStrongPassword123",
-        "DB_CONNECTION_STRING": "Host=localhost;Port=5432;Database=k8sapi;Username=apiuser;Password=yourStrongPassword123"
+        "DB_PASSWORD": "u43hv45m98vmcgmh29-tcm-43c8"
+        //"DB_CONNECTION_STRING": "Host=localhost;Port=5432;Database=k8sapi;Username=apiuser;Password=yourStrongPassword123"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:8080"

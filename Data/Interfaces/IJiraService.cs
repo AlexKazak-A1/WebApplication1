@@ -8,9 +8,9 @@ public interface IJiraService
 {
     public Task<object?> CreateClusterLazy(JiraCreateClusterRequestDTO data);
 
-    public Task<JsonResult> GetProxmoxInfo(int proxmoxId);
+    public Task<JsonResult> GetProxmoxInfo(string proxmoxUniqueName);
 
-    public Task<VmInfoDTO> GetVMInfo(int proxmoxId, int VMId);
+    public Task<VmInfoDTO> GetVMInfo(string proxmoxUniqueName, int VMId);
 
 
 }

@@ -7,7 +7,7 @@ public class MainDBContext : DbContext
 {
     public MainDBContext(DbContextOptions<MainDBContext> options) : base(options)
     {
-        Database.EnsureCreated();
+        CheckDatabase();
     }
 
     public DbSet<ProxmoxModel> Proxmox { get; set; }
@@ -18,5 +18,10 @@ public class MainDBContext : DbContext
         modelBuilder.Entity<ProxmoxModel>()
             .Property(p => p.DefaultConfig)
             .HasColumnType("jsonb");
+    }
+
+    private async Task CheckDatabase()
+    {
+        await Database.EnsureCreatedAsync();
     }
 }

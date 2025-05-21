@@ -46,8 +46,14 @@ public class Program
         //builder.Services.AddDbContextFactory<MainDBContext>(options =>
         //    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Scoped);
 
+        var host = Environment.GetEnvironmentVariable("DB_HOST");
+        var port = Environment.GetEnvironmentVariable("DB_PORT");
+        var database = Environment.GetEnvironmentVariable("DB_NAME");
+        var username = Environment.GetEnvironmentVariable("DB_USER");
+        var password = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
         var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
-        ?? builder.Configuration.GetConnectionString("DefaultConnection");
+        ?? $"Host={host};Port={port};Database={database};Username={username};Password={password}";
 
         builder.Services.AddDbContextFactory<MainDBContext>(options =>
         options.UseNpgsql(connectionString), ServiceLifetime.Scoped);
@@ -198,7 +204,8 @@ public class Program
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+            c.SwaggerEndpoint("v1/swagger.json", "Rancher To Proxmox API");
+
         });
 
         app.Run();
