@@ -14,13 +14,13 @@ public class TemplateParams
     public string CPU {  get; set; }
 
     /// <summary>
-    /// Amount of RAM
+    /// Amount of RAM 
     /// </summary>
     [JsonProperty("ram")]
     public string RAM { get; set; }
 
     /// <summary>
-    /// Amount of HDD
+    /// Amount of HDD 
     /// </summary>
     [JsonProperty("hdd")]
     public string HDD { get; set; }

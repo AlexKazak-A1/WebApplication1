@@ -8,10 +8,10 @@ namespace WebApplication1.Models;
 public class RancherModel
 {
     /// <summary>
-    /// Uniqur Id for DB record
+    /// Unique Id for DB record
     /// </summary>
     [Key]
-    public int Id { get; set; }
+    public int Id { get; set; } 
 
     /// <summary>
     /// Rancher access URL

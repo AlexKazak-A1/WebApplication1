@@ -1,5 +1,8 @@
 ﻿namespace WebApplication1.Data.ProxmoxDTO;
 
+/// <summary>
+/// Описывает информацию о храниличе доступном для Proxmox
+/// </summary>
 public class ProxmoxStorageInfoDTO
 {
     public string Storage { get; set; }

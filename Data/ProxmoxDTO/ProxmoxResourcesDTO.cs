@@ -1,5 +1,8 @@
 ﻿namespace WebApplication1.Data.ProxmoxDTO
 {
+    /// <summary>
+    /// Описывает ресурсы доступные для текущего Proxmox кластера
+    /// </summary>
     public class ProxmoxResourcesDTO
     {
         public string Type { get; set; } = string.Empty;

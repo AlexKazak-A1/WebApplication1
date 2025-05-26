@@ -2,9 +2,12 @@
 
 namespace WebApplication1.Data.ProxmoxDTO.Node;
 
+/// <summary>
+/// Описывет информацию о CPU для Proxmox хоста
+/// </summary>
 public class NodeCPUInfoDTO
 {
-    [JsonProperty("coers")]
+    [JsonProperty("cores")]
     public int Cores { get; set; } = 0;
 
     [JsonProperty("hvm")]

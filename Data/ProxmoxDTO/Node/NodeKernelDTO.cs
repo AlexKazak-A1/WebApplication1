@@ -2,6 +2,9 @@
 
 namespace WebApplication1.Data.ProxmoxDTO.Node;
 
+/// <summary>
+/// Описывает ядро Proxmox на котором он работает
+/// </summary>
 public class NodeKernelDTO
 {
     [JsonProperty("relese")]

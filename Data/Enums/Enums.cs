@@ -1,5 +1,8 @@
 ﻿namespace WebApplication1.Data.Enums;
 
+/// <summary>
+/// Описывает все доступные статусы сообщений
+/// </summary>
 public enum Status
 {
     INFO = 100,
@@ -26,8 +29,18 @@ public enum ConnectionType
     Proxmox
 }
 
+/// <summary>
+/// Тип части кластера для развёртывания
+/// </summary>
 public enum ClusterElemrntType
 {
+    /// <summary>
+    /// описывает управляющие узлы
+    /// </summary>
     ETCDAndControlPlane,
+
+    /// <summary>
+    /// описывает рабочие узлы
+    /// </summary>
     Worker
 }

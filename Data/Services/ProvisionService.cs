@@ -27,6 +27,11 @@ public class ProvisionService : IProvisionService
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Получение данных для подключения из БД
+    /// </summary>
+    /// <param name="connectionTarget">Тип необходитого подключения</param>
+    /// <returns>Возвращает Json, содержащий список доступных подключений</returns>
     public async Task<JsonResult> GetConnectionCreds(ConnectionType connectionTarget)
     {
         try
@@ -45,9 +50,15 @@ public class ProvisionService : IProvisionService
         }
     }
 
+    /// <summary>
+    /// Создание кластера Rancher
+    /// </summary>
+    /// <param name="param">Объект с параметрами для создания кластера</param>
+    /// <returns>Возврат информаци об успешности создания кластера</returns>
+    /// <exception cref="Exception">Если возникает любая ошибка</exception>
     public async Task<JsonResult> CreateClaster(CreateClusterDTO param)
     {
-        if (param == null)
+        if (param == null) // проверка валидности типа
         {
             return new JsonResult(new Response { Status = Status.ERROR, Message = "Wrong type in CreateClaster" });
         }
@@ -55,7 +66,7 @@ public class ProvisionService : IProvisionService
         try
         {
 
-            var creationResult = await _rancherService.CreateClusterAsync(param);
+            var creationResult = await _rancherService.CreateClusterAsync(param); // создание кластера
 
             if (creationResult != null)
             {
@@ -70,6 +81,12 @@ public class ProvisionService : IProvisionService
         }
     }
 
+    /// <summary>
+    /// Создание VM в Proxmox
+    /// </summary>
+    /// <param name="param">Параметры для создания машин</param>
+    /// <returns>JSon сщ списком машин и результатом их создания</returns>
+    /// <exception cref="Exception">Если возникает любая ошибка</exception>
     public async Task<JsonResult> CreateProxmoxVMs(CreateVMsDTO param)
     {
         try
@@ -81,10 +98,11 @@ public class ProvisionService : IProvisionService
             //{
             //    responseList.Add(new Response { Status = Status.ERROR, Message = "Can not create vms, because of resource limit" });
             //}
-            var creationVMsResult = await _proxmoxService.StartProvisioningVMsAsync(param);
+            var creationVMsResult = await _proxmoxService.StartProvisioningVMsAsync(param); // Начало создания машин
 
            
 
+            // формирование результирующего списка машин и их результатов
             foreach (var str in creationVMsResult as List<object>)
             {
                 if (str is int vmId)
@@ -112,6 +130,12 @@ public class ProvisionService : IProvisionService
         }
     }
 
+    /// <summary>
+    /// Получение строки подключения к Rancher
+    /// </summary>
+    /// <param name="clusterInfo">Параметры созданного кластера Rancher</param>
+    /// <returns>Json с результатом</returns>
+    /// <exception cref="Exception">Если возникает любая ошибка</exception>
     public async Task<JsonResult> GetConnectionStringToRancher(CreateClusterDTO clusterInfo)
     {
         if (clusterInfo == null)
@@ -121,7 +145,7 @@ public class ProvisionService : IProvisionService
 
         try
         {
-            var connectionString = await _rancherService.GetConnectionString(clusterInfo.RancherId, clusterInfo.ClusterName);
+            var connectionString = await _rancherService.GetConnectionString(clusterInfo.RancherId, clusterInfo.ClusterName); // Получение строки подключения 
             return new JsonResult(new Response { Status = Status.OK, Message = connectionString });
         }
         catch (Exception ex)
@@ -130,8 +154,15 @@ public class ProvisionService : IProvisionService
         }
     }
 
+    /// <summary>
+    /// Запуск VM и подключение их к Rancher
+    /// </summary>
+    /// <param name="data">Объект с данными для подключения</param>
+    /// <returns>Json с результатом подключения</returns>
+    /// <exception cref="Exception">Если возникает любая ошибка</exception>
     public async Task<JsonResult> StartVMAndConnectToRancher(ConnectVmToRancherDTO data)
     {
+        // проверка валидности данных
         if (data == null)
         {
             return new JsonResult(new Response { Status = Status.ERROR, Message = "Input data can't be null" });
@@ -145,18 +176,21 @@ public class ProvisionService : IProvisionService
 
         try
         {
+            // Запуск машин
             var vmsRunningState = await _proxmoxService.StartVmsAsync(data.VMsId, currentProxmoxId);
 
+            // Ожидание статуса готовности машин к подключению к Rancher
             var vmsReadyStatus = await _proxmoxService.WaitReadyStatusAsync(vmsRunningState, currentProxmoxId, data.ConnectionString);
 
+            // формирование результата
             List<Response> result = new();
             foreach (var vmStatus in vmsReadyStatus)
             {
-               if (vmStatus.Value)
+               if (vmStatus.Value) // машина успешно подключена
                {
                     result.Add(new Response { Status = Status.OK, Message = vmStatus.Key.ToString() });
                }
-               else
+               else // возникла проблема подключения
                {
                     result.Add(new Response { Status = Status.WARNING, Message = vmStatus.Key.ToString() });
                }
@@ -171,16 +205,22 @@ public class ProvisionService : IProvisionService
         }
     }
     
+    /// <summary>
+    /// Получение параметров подключения из БД(общий метод)
+    /// </summary>
+    /// <param name="inputType">Тип подключения</param>
+    /// <returns>Список с доступными подключениями</returns>
     private async Task<List<SelectOptionDTO>> GetCreds(object inputType)
     {
         var selectList = new List<SelectOptionDTO>();
 
-        if (inputType is ConnectionType type)
+        if (inputType is ConnectionType type) // проверка типа
         {
-            if (type == ConnectionType.Proxmox)
+            if (type == ConnectionType.Proxmox) // если это Proxmox
             {
-                var currentTypeArray = new List<ProxmoxModel>((List<ProxmoxModel>)await _dbWorker.GetConnectionCredsAsync(type));
+                var currentTypeArray = new List<ProxmoxModel>((List<ProxmoxModel>)await _dbWorker.GetConnectionCredsAsync(type)); // получение данных из БД
 
+                // добавление в список
                 foreach (var proxmox in currentTypeArray)
                 {
                     selectList.Add(new SelectOptionDTO
@@ -191,10 +231,11 @@ public class ProvisionService : IProvisionService
                 }
 
             }
-            else if (type == ConnectionType.Rancher)
+            else if (type == ConnectionType.Rancher) // если это Rancher
             {
-                var currentTypeArray = new List<RancherModel>((List<RancherModel>)await _dbWorker.GetConnectionCredsAsync(type));
+                var currentTypeArray = new List<RancherModel>((List<RancherModel>)await _dbWorker.GetConnectionCredsAsync(type)); // получение данных из БД
 
+                // добавление в список
                 foreach (var rancher in currentTypeArray)
                 {
                     selectList.Add(new SelectOptionDTO
@@ -210,10 +251,15 @@ public class ProvisionService : IProvisionService
         return selectList;
     }    
 
+    /// <summary>
+    /// Проверка возможности создания VM с указанными параметрами
+    /// </summary>
+    /// <param name="info">Параметры для создания VM</param>
+    /// <returns>JSON с информацией о возможности создания кластера</returns>
     public async Task<JsonResult> GetCreationAvailibility(CreateVMsDTO info)
     {
         
-        if (info == null)
+        if (info == null) // проверка валидности
         {
             return new JsonResult(new Response { Status = Status.ERROR, Message = $"info is null in {nameof(GetCreationAvailibility)}" });
         }
@@ -221,7 +267,7 @@ public class ProvisionService : IProvisionService
         try
         {
             var vmAllocation = new Dictionary<string, string>();
-            var result = await _proxmoxService.CheckCreationAbility(info);
+            var result = await _proxmoxService.CheckCreationAbility(info); // проверка возможности создания кластера с учётом переподписки и параметров по умолчанию
 
             if (result != null)
             {

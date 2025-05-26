@@ -2,6 +2,9 @@
 
 namespace WebApplication1.Data.ProxmoxDTO;
 
+/// <summary>
+/// Описывает VM развёрнутую на Proxmox хотсе
+/// </summary>
 public class ProxmoxQemuDTO
 {
     [JsonProperty("status")]

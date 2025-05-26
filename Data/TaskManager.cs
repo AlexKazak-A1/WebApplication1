@@ -3,6 +3,9 @@ using System.Collections.Concurrent;
 
 namespace WebApplication1.Data;
 
+/// <summary>
+/// Описывает управление состоянием заданий на созданние нового кластера
+/// </summary>
 public static class TaskManager
 {
     private static readonly ConcurrentDictionary<Guid, TaskStatusInfo> _tasks = new();
@@ -14,6 +17,11 @@ public static class TaskManager
         _cleanupTimer = new Timer(Cleanup, null, Retention, Retention);
     }
 
+    /// <summary>
+    /// запускает создание нового кластера
+    /// </summary>
+    /// <param name="createFunc">описывает спецификацию создания кластера</param>
+    /// <returns>ID задачи для контроля состояния её выполнения</returns>
     public static Guid StartClusterCreation(Func<Task<object?>> createFunc)
     {
         var taskId = Guid.NewGuid();
@@ -47,11 +55,20 @@ public static class TaskManager
         return taskId;
     }
 
+    /// <summary>
+    /// Запрашивает текущий статус задачи
+    /// </summary>
+    /// <param name="taskId">ID задачи, полученный при создании кластера</param>
+    /// <returns></returns>
     public static TaskStatusInfo? GetStatus(Guid taskId)
     {
         return _tasks.TryGetValue(taskId, out var result) ? result : null;
     }
 
+    /// <summary>
+    /// Очистка данных о состоянии задачи после истечения периода
+    /// </summary>
+    /// <param name="_"></param>
     private static void Cleanup(object? _)
     {
         var threshold = DateTime.UtcNow - Retention;

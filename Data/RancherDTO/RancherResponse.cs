@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace WebApplication1.Data.RancherDTO;
 
+/// <summary>
+/// Описывает ответ от RAncher кластера на отправляемые запросы
+/// </summary>
 public class RancherResponse
 {
     public string Type { get; set; }

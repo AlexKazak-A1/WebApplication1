@@ -5,13 +5,13 @@ namespace WebApplication1.Models;
 public class ProvisionModel :PageModel
 {
 
-    public ProxmoxModel Proxmox { get; set; }
+    public ProxmoxModel Proxmox { get; set; } // модель описывающая Proxmox в БД
 
-    public RancherModel Rancher { get; set; }
+    public RancherModel Rancher { get; set; } // модель описывающая Rancher в БД
 
-    public int NumberOfETCDAndControlPlane { get; set; } = 3;
+    public int NumberOfETCDAndControlPlane { get; set; } = 3; // колличество управляющих узлов
 
-    public int numberOfWorker { get; set; }
+    public int numberOfWorker { get; set; } // колличество рабочих узлов
 
     public void OnGet()
     {

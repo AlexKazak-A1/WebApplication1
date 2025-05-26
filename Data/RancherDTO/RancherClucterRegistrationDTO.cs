@@ -3,6 +3,9 @@ using System.Text.Json;
 
 namespace WebApplication1.Data.RancherDTO;
 
+/// <summary>
+/// Описывает всю возможную информацию, всязанную с подключением VM к новому кластеру Rancher
+/// </summary>
 public class RancherClucterRegistrationDTO
 {
     [JsonProperty("baseType")]

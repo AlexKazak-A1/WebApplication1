@@ -3,6 +3,9 @@
 namespace WebApplication1.Data.ProxmoxDTO;
 
 #pragma warning disable CS1591
+/// <summary>
+/// В классе хранится описание всех сетевых параметров доступных для Proxmox хоста
+/// </summary>
 public class ProxmoxNetworkInfoDTO
 {
     public string? MTU { get; set; } = default;

@@ -2,6 +2,9 @@
 
 namespace WebApplication1.Data.ProxmoxDTO;
 
+/// <summary>
+/// Описывает информацию о хосте Proxmox
+/// </summary>
 public class ProxmoxNodeInfoDTO
 {
     /// <summary>

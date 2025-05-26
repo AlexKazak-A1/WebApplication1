@@ -2,6 +2,9 @@
 
 namespace WebApplication1.Data.ProxmoxDTO.Node;
 
+/// <summary>
+/// Описывает колличество ОЗУ в кластере Proxmox
+/// </summary>
 public class NodeMemoryDTO
 {
     [JsonProperty("used")]

@@ -3,7 +3,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Data.Database;
 
-public class MainDBContext : DbContext
+public class MainDBContext : DbContext // контекст для описания поведения при подключени к БД
 {
     public MainDBContext(DbContextOptions<MainDBContext> options) : base(options)
     {

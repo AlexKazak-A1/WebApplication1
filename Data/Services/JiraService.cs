@@ -25,6 +25,11 @@ public class JiraService : IJiraService
         _provisionService = provisionService;
     }
 
+    /// <summary>
+    /// Выполнение развёртывания для данных пришедших от Jira
+    /// </summary>
+    /// <param name="data">Ammount of params from Jira</param>
+    /// <returns>Unique Id of task to control its state</returns>
     public async Task<object?> CreateClusterLazy(JiraCreateClusterRequestDTO data)
     {
         try
@@ -35,9 +40,10 @@ public class JiraService : IJiraService
             createClusterDTO.ClusterName = data.ClusterName;
             createVMsDTO.ClusterName = data.ClusterName;
 
-            var rancher = await _rancherService.GetRancherCred(data.UniqueRancherName);
-            var proxmox = await _proxmoxService.GetProxmoxCred(data.UniqueProxmoxName);
+            var rancher = await _rancherService.GetRancherCred(data.UniqueRancherName); // получение параметров подключения из БД по уникальному имени для Rancher
+            var proxmox = await _proxmoxService.GetProxmoxCred(data.UniqueProxmoxName); // получение параметров подключения из БД по уникальному имени для Proxmox
 
+            // Заполнение недостающих данных
             createClusterDTO.RancherId = rancher != -1 ? rancher.ToString() : null;
             
             createVMsDTO.RancherId = rancher;
@@ -49,6 +55,7 @@ public class JiraService : IJiraService
                 return null;
             }
 
+            // выставление параметров по умолчанию, на основе конфига по умолчанию
             createVMsDTO = await _proxmoxService.SetProxmoxDefaultValues(createVMsDTO, data.Environment);
 
             if (createVMsDTO == null)
@@ -56,10 +63,10 @@ public class JiraService : IJiraService
                 return null;
             }
 
-            createVMsDTO.WorkerAmount = data.WorkerAmount;
-            createVMsDTO.VMConfig = data.ParamsPerWorker;
+            createVMsDTO.WorkerAmount = data.WorkerAmount; // выставление количества рабочих узлов
+            createVMsDTO.VMConfig = data.ParamsPerWorker; // выставление параметров рабочих узлов
 
-
+            // проверка на Возможность развёртывания при указанных параметрах
             var creationAbility = await _proxmoxService.CheckCreationAbility(createVMsDTO);
 
             if (creationAbility != null)
@@ -67,6 +74,7 @@ public class JiraService : IJiraService
                 createVMsDTO.ProvisionSchema = creationAbility;
             }
 
+            // создание кластера в Rancher
             var createRancherCluster = await _rancherService.CreateClusterAsync(createClusterDTO);
 
             if (createRancherCluster.Value is Response response && response.Status == Enums.Status.ERROR)
@@ -74,6 +82,7 @@ public class JiraService : IJiraService
                 return null;
             }
 
+            // получение строки подключения к Rancher
             var connectionToRancherString = await _rancherService.GetConnectionString(createClusterDTO.RancherId, createClusterDTO.ClusterName);
 
             if (string.IsNullOrEmpty(connectionToRancherString))
@@ -81,6 +90,7 @@ public class JiraService : IJiraService
                 return null;
             }
 
+            // Запуск создания VM по указанным параметрам
             var createProxomxVMs = await _provisionService.CreateProxmoxVMs(createVMsDTO);
 
             var vms = new List<int>();
@@ -90,6 +100,7 @@ public class JiraService : IJiraService
                 return null;
             }
 
+            // формирование списка успешно созданных VM
             foreach (var res in responses)
             {
                 if(res.Status == Enums.Status.OK || res.Status == Enums.Status.ALREADY_EXIST)
@@ -98,11 +109,13 @@ public class JiraService : IJiraService
                 }
             }
 
+            // создание объекта с информацией для подключения VM к Rancher
             var connection = new ConnectVmToRancherDTO();
             connection.ConnectionString = connectionToRancherString;
             connection.ProxmoxId = createVMsDTO.ProxmoxId.ToString();
             connection.VMsId = vms;
 
+            // Начало подключения VM к RAncher
             var result = await _provisionService.StartVMAndConnectToRancher(connection);
             result.StatusCode = StatusCodes.Status200OK;
 
@@ -115,11 +128,22 @@ public class JiraService : IJiraService
         }
     }
 
+    /// <summary>
+    /// Получение информации о ресурсах в Proxmox Кластере/хочте
+    /// </summary>
+    /// <param name="proxmoxUniqueName">Уникальное имя для Proxmox</param>
+    /// <returns>Json with all info about Proxmox</returns>
     public async Task<JsonResult> GetProxmoxInfo(string proxmoxUniqueName)
     {
         return new JsonResult(await _proxmoxService.GetProxmoxResources(proxmoxUniqueName));
     }
 
+    /// <summary>
+    /// Получение информации о VM, развёрнутой в Proxmox 
+    /// </summary>
+    /// <param name="proxmoxUniqueName">Уникальное имя для Proxmox</param>
+    /// <param name="VMId">Id of VM</param>
+    /// <returns>Json with info about VM</returns>
     public async Task<VmInfoDTO> GetVMInfo(string proxmoxUniqueName, int VMId)
     {
         return await _proxmoxService.GetVmInfoAsync(proxmoxUniqueName, VMId);

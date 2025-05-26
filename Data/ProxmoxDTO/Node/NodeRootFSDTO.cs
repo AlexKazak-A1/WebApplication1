@@ -2,6 +2,9 @@
 
 namespace WebApplication1.Data.ProxmoxDTO.Node;
 
+/// <summary>
+/// Описывает корневую файловую систему на хосте Proxmox
+/// </summary>
 public class NodeRootFSDTO
 {
     [JsonProperty("free")]

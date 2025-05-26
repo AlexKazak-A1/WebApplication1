@@ -2,6 +2,9 @@
 
 namespace WebApplication1.Data.ProxmoxDTO.Node;
 
+/// <summary>
+///  описывает swap пространство на хосте Proxmox
+/// </summary>
 public class NodeSwapDTO
 {
     [JsonProperty("used")]
